@@ -1,0 +1,149 @@
+/*
+// declare some integer data type variables
+int a, b, c;
+int d = 15, e = 20;
+
+// assign those vars some initial values
+a = 10;
+b = 5;
+c = 0;
+
+// write those vars out to the output buffer
+Console.WriteLine("a = {0}, b = {1}, c = {2}, d = {3}, e = {4}", a, b, c, d,e);
+
+// reassign vars
+Console.WriteLine(""); // blank line
+Console.WriteLine("About to reassign variable values");
+Console.WriteLine("");
+
+c = a - b;
+d = a * b; // the * symbol is the multiplication operator in C#
+a = d % b; // the % symbol is the modulus operator in C#
+e = a / b; // the / symbol is the division operator in C#
+
+// the integer data type does not support exponents
+
+// please note the two types of comments
+// this is a single line comment
+
+
+Console.WriteLine("a = {0}, b = {1}, c = {2}, d = {3}, e = {4}", a, b, c, d,e);
+
+
+
+double a = 1.5, b = -6.00, c = 10.25e-5;
+
+double d, e, f, g, h, i, j;
+
+d = a + b;
+e = a - b;
+f = a * b;
+g = a / b;
+h = a % b;
+i = Math.Pow(a, b);     // a raised to the b power
+
+Console.WriteLine("a = {0}, b = {1}, c = {2}", a, b, c);
+Console.WriteLine("a + b = {0}", d);
+Console.WriteLine("a - b = {0}", e);
+Console.WriteLine("a * b = {0}", f);
+Console.WriteLine("a / b = {0}", g);
+Console.WriteLine("a % b = {0}", h);
+Console.WriteLine("Math.Pow(a,b) = {0}", i);
+
+
+if (a == b) Console.WriteLine("a == b is true");
+if (a != b) Console.WriteLine("a != b is true");
+if (a < b) Console.WriteLine("a < b is true");
+if (a <= b) Console.WriteLine("a <= b is true");
+if (a > b) Console.WriteLine("a > b is true");
+if (a >= b) Console.WriteLine("a >= b is true");
+
+string x = "Rick Phillips", y = "is the man";
+
+// string concatenation
+Console.WriteLine(x + " " + y);
+
+// IndexOf with 1 parameter
+Console.WriteLine("First occurence of P in x is at index location {0}", x.IndexOf("P"));
+
+// IndexOf with 2 parameters
+Console.WriteLine("Second occurence of l in x is at index location {0}", x.IndexOf("l",2));
+
+// Substring with 1 parameter
+Console.WriteLine("Substring of variable x starting at position 6 {0}", x.Substring(6));
+
+// Substring with 2 parameters
+Console.WriteLine("Substring of variable x starting at position 6 for 4 characters {0}", x.Substring(6,4));
+
+// you can only do equality tests on strings - GT, GE, LT, LE are not valid
+if (x == y) Console.WriteLine("x == y is true");
+if (x != y) Console.WriteLine("x != y is true");
+
+
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+DateTime myNow = DateTime.Now;
+
+// default format is very "American"
+Console.WriteLine("Now = myNow = {0}", myNow);
+
+DateTime myDate = new DateTime(2025, 7, 16);
+Console.WriteLine("myDate = {0}", myDate);
+
+DateTime myDate2 = new DateTime(2025, 7, 16, 15, 41, 0);
+Console.WriteLine("myDate2 = {0}", myDate2);
+
+Console.WriteLine(myDate2.Day);
+Console.WriteLine(myDate2.Hour);
+Console.WriteLine(myDate2.Minute);
+Console.WriteLine(myDate2.Second);
+
+Console.WriteLine(myDate2.ToString("MM '-' dd '-' yyyy"));
+Console.WriteLine(myDate2.ToString("MMMM '-' dd '-' yyyy"));
+Console.WriteLine(myDate2.ToString("MM '-' dddd '-' yyyy"));
+
+TimeSpan ts = myDate2.Subtract(myDate);
+Console.WriteLine("Timespan between myDate2 and myDate is {0}", ts);
+*/
+bool a = true, b = true, c = false, d = false;
+
+// AND relational logic is &&
+Console.WriteLine("a = true, b = true therefore a && b = {0}", a && b);
+Console.WriteLine("a = true, c = false therefore a && c = {0}", a && c);
+Console.WriteLine("c = false, d = false therefore c && d = {0}", c && d);
+
+// OR relational operator is ||
+Console.WriteLine("a = true, b = true therefore a || b = {0}", a || b);
+Console.WriteLine("a = true, c = false therefore a || c = {0}", a || c);
+Console.WriteLine("c = false, d = false therefore c || d = {0}", c || d);
+
+// XOR relational operator is ^  
+Console.WriteLine("a = true, b = true therefore a ^ b = {0}", a ^ b);
+Console.WriteLine("a = true, c = false therefore a ^ c = {0}", a ^ c);
+Console.WriteLine("c = false, d = false therefore c ^ d = {0}", c ^ d);
+
+// NOT relational operator is !
+Console.WriteLine("a = true therefore !a  = {0}", !a);
+Console.WriteLine("c = false therefore !c = {0}", !c);
+ 
+
+bool a = true, b = true, c = false, d = false;
+bool? e = null, f = null, g = null;  // note how I have to identify a nullable boolean var
+
+// AND relational logic with nulls
+Console.WriteLine("a = true, e = null therefore a & e = {0}", a & e);
+Console.WriteLine("c = false, e = null therefore c & e = {0}", c & e);
+Console.WriteLine("e = null, f = null therefore e & f = {0}", e & f);
+
+// OR relational logic with nulls
+Console.WriteLine("a = true, e = null therefore a | e = {0}", a | e);
+Console.WriteLine("c = false, e = null therefore c | e = {0}", c | e);
+Console.WriteLine("e = null, f = null therefore e | f = {0}", e | f);
+
+// XOR relational logic with nulls
+Console.WriteLine("a = true, e = null therefore a ^ e = {0}", a ^ e);
+Console.WriteLine("c = false, e = null therefore c ^ e = {0}", c ^ e);
+Console.WriteLine("e = null, f = null therefore e ^ f = {0}", e ^ f);
+
+g = e & f;
+if (g == null) Console.WriteLine("Better than leaving a result undefined.");
