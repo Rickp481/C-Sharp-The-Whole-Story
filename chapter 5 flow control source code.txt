@@ -1,0 +1,78 @@
+using System.Collections;
+
+int a = 10, b = 20;
+
+
+// if command
+if (a == b) 
+    Console.WriteLine("a = 10 and b = 20, this line is written if a == b resolves to true");
+else if (a != b)
+    Console.WriteLine("a = 10 and b = 20, this line is written if a != b resolves to true");
+else
+    Console.WriteLine("a = 10 and b = 20, this line is written if a == b and a != b resolve to false");
+
+if (a < b)
+{
+    // the curly brackets are optional when only one command exists with the if
+    // they are required when more than one command exists
+    Console.WriteLine("a = 10 and b = 20, this line is written if a < b resolves to true");
+}
+else if (a > b)
+    Console.WriteLine("a = 10 and b = 20, this line is written if a > b resolves to true");
+else if (a >= b)
+    Console.WriteLine("a = 10 and b = 20, this line is written if a >= b resolves to true");
+
+
+
+switch (a+b)
+    {
+    case -5:
+        Console.WriteLine("a = 10 and b = 5 so a+b = -5");
+        break;
+    case 0:
+        Console.WriteLine("a = 10 and b = 5 so a+b = 0");
+        break;
+    case 20:
+        Console.WriteLine("a = 10 and b = 5 so a+b = 20");
+        break;
+    default:
+        Console.WriteLine("none of the above was true");
+        break;  // this break is required but dumb!
+}
+
+Random r = new Random();
+int newRandom, counter = 0;
+
+while (counter < 5)
+{
+    newRandom = r.Next(0, 100); // generate a random number between 0 and 99
+    Console.WriteLine("Random number " + counter + " was " + newRandom);
+    counter+=2; 
+}
+
+
+for (int lcv = 0; lcv < 6; lcv++)
+{
+    newRandom = r.Next(); // no parameters says any random number
+    Console.WriteLine("Random number " + lcv + " was " + newRandom);
+}
+
+for (int lcv = 0; lcv < 6; lcv+=10)
+{
+    newRandom = r.Next(100); // one parameter return random lt parameter value
+    Console.WriteLine("Random number " + lcv + " was " + newRandom);
+}
+
+
+
+ArrayList names = new ArrayList();
+names.Add("Rick");
+names.Add("Mary");
+names.Add("Daniel");
+names.Add("David");
+names.Add("Gus");
+
+foreach (string name in names)
+{
+    Console.WriteLine(name);
+}
