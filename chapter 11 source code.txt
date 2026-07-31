@@ -1,0 +1,175 @@
+using System.ComponentModel.Design;
+
+namespace Chapter_10_Calculator
+{
+    public partial class Form1 : Form
+    {
+        string operand1, operand2, my_operator;
+        bool operand1_set;
+
+        public Form1()
+        {
+            InitializeComponent();
+            this.KeyPreview = true;  // enable form to receive key events
+            this.KeyDown += Form1_KeyDown;
+        }
+
+        public string ConvertKeyCodeToString (Keys keyCode)
+        {
+            KeysConverter converter = new KeysConverter();
+            return converter.ConvertToString(keyCode);
+        }
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3
+                || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7
+                || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9)
+            {
+                string keyString = ConvertKeyCodeToString(e.KeyCode);
+                // the 9 key actually return NumPad9 so do a substr
+                keyString = keyString.Substring(6);
+                concatenate_display(keyString);
+            }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            GenericClearButton_Click();
+        }
+
+        private bool is_too_long()
+        {
+            if (DisplayLabel.Text.Length > 20)
+            {
+                Console.Beep();
+                MessageBox.Show("Your number is too long for the display", "Too Long");
+                return true;
+            }
+            else return false;
+        }
+
+        private void concatenate_display(string x)
+        {
+            if (is_too_long())
+            {
+                // the user was just informed that their operand was too long, go back to defaults
+                GenericClearButton_Click();
+            }
+            else if (DisplayLabel.Text == "0" || operand1_set == true)
+            {
+                if (DisplayLabel.Text == "0" || DisplayLabel.Text == operand1)
+                {
+                    // the user is entering the first digit of an operand
+                    DisplayLabel.Text = x;
+                }
+                else
+                {
+                    // the user is entering additional digits to operand1
+                    DisplayLabel.Text += x;
+                }
+            }
+            else
+            {
+                // user is forming a multi-digit number, just concatenate the input parm
+                DisplayLabel.Text += x;
+            }
+        }
+        private void GenericClearButton_Click()
+        {
+            if (operand1 == "")
+            {
+                operand1 = "";
+                operand2 = "";
+                my_operator = "";
+                DisplayLabel.Text = "0";
+                operand1_set = false;
+            }
+            else if (my_operator == "")
+            {
+                operand2 = "";
+                my_operator = "";
+                DisplayLabel.Text = "0";
+            }
+            else
+            {
+                operand2 = "";
+                DisplayLabel.Text = "0";
+            }
+
+        }
+
+        private void GenericDigitButton_Click(object sender, EventArgs e)
+        {
+            Button bt = (Button)sender;
+            concatenate_display(bt.Text);
+        }
+        private void PercentButton_Click(object sender, EventArgs e)
+        {
+            Double my_value;
+            my_value = Convert.ToDouble(DisplayLabel.Text);
+            DisplayLabel.Text = (my_value / 100).ToString();
+        }
+
+        private void ChangeSignButton_Click(object sender, EventArgs e)
+        {
+            if (DisplayLabel.Text.IndexOf("-") == -1)
+            {
+                DisplayLabel.Text = "-" + DisplayLabel.Text;
+            }
+            else
+                // remember C# is zero based so Substring(1) starts at second char
+                DisplayLabel.Text = DisplayLabel.Text.Substring(1);
+
+        }
+
+        private void GenericMathButton_Click(Object sender, EventArgs e)
+        {
+            Button bt = (Button)sender;
+            my_operator = bt.Text;
+            operand1_set = true;
+
+            if (operand1 == "")
+            {
+                operand1 = DisplayLabel.Text;
+            }
+            else if (my_operator == "+")
+            {
+                // operand1 = operand1 + value of DisplayLabel.Text
+                operand1 = (Convert.ToDouble(operand1) + Convert.ToDouble(DisplayLabel.Text)).ToString();
+            }
+            else if (my_operator == "-")
+            {
+                operand1 = (Convert.ToDouble(operand1) - Convert.ToDouble(DisplayLabel.Text)).ToString();
+            }
+            else if (my_operator == "*")
+            {
+                operand1 = (Convert.ToDouble(operand1) * Convert.ToDouble(DisplayLabel.Text)).ToString();
+            }
+            else if (my_operator == "/")
+            {
+                operand1 = (Convert.ToDouble(operand1) / Convert.ToDouble(DisplayLabel.Text)).ToString();
+            }
+        }
+
+        private void EqualsButton_Click(object sender, EventArgs e)
+        {
+            if (my_operator == "+" && operand1 != "" && operand2 != "")
+            {
+                DisplayLabel.Text = (Convert.ToDouble(operand1) + Convert.ToDouble(operand2)).ToString();
+            }
+            else if (my_operator == "-" && operand1 != "" && operand2 != "")
+            {
+                DisplayLabel.Text = (Convert.ToDouble(operand1) - Convert.ToDouble(operand2)).ToString();
+            }
+            else if (my_operator == "*" && operand1 != "" && operand2 != "")
+            {
+                DisplayLabel.Text = (Convert.ToDouble(operand1) * Convert.ToDouble(operand2)).ToString();
+            }
+            else if (my_operator == "/" && operand1 != "" && operand2 != "")
+            {
+                DisplayLabel.Text = (Convert.ToDouble(operand1) / Convert.ToDouble(operand2)).ToString();
+            }
+            else MessageBox.Show("Both operands are required", "both required");
+        }
+    }
+}
