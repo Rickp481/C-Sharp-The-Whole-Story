@@ -1,0 +1,194 @@
+using System.Diagnostics.Eventing.Reader;
+
+namespace Chapter_14_Movement_and_Resizing
+{
+    public partial class Form1 : Form
+    {
+        enum Directions { Up, Down, Left, Right, Clockwise, CounterClockwise, Bigger, Smaller };
+        enum Controller { Button, Keyboard, MouseLeft };
+        enum Changing { Size, Location, Rotation };
+
+        Directions direction;
+        Controller controller;
+        Changing changing;
+
+        int FormHeight = 600, FormWidth = 1200, x_location = 525, y_location = 225;
+
+        Random ran = new Random();
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            direction = Directions.Bigger;
+            controller = Controller.MouseLeft;
+            changing = Changing.Rotation;
+
+            if (changing == Changing.Location && controller == Controller.Button) PickDirection();
+
+            StartStopButton.Text = "Start";
+
+            if (changing == Changing.Rotation)
+            {
+                pictureBox1.Size = new Size(500, 500); // make it a little bigger so it's easier to see the rotation
+                Image img1 = Image.FromFile(@"F:\documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 14 Movement\images\wheel image.jpg");
+                pictureBox1.Image = img1;
+                StartStopButton.Visible = false;
+                timer1.Enabled = true;
+            }
+            else if (controller == Controller.Button)
+            {
+                timer1.Enabled = false;
+                StartStopButton.Visible = true;
+            }
+            else if (controller == Controller.Keyboard)
+            {
+                timer1.Enabled = true;
+                StartStopButton.Visible = false;
+            }
+            else if (controller == Controller.MouseLeft)
+            {
+                StartStopButton.Visible = false;
+                timer1.Enabled = false;
+            }
+
+            pictureBox1.Location = new Point(x_location, y_location);
+            pictureBox1.Size = new Size(50, 50);
+        }
+
+
+        private void Form1_MouseDown(object sender, MouseEventArgs e)
+        {
+            // jump to the location of mouse at time of left button click
+            if (e.Button == MouseButtons.Left && controller == Controller.MouseLeft)
+            {
+                pictureBox1.Top = e.Y;
+                pictureBox1.Left = e.X;
+            }
+        }
+        private void PickDirection()
+        {
+            int r = ran.Next(4); // 0 = Left, 1 = Right, 2 = Up, 3 = Down
+            if (r == 0) direction = Directions.Left;
+            else if (r == 1) direction = Directions.Right;
+            else if (r == 2) direction = Directions.Up;
+            else direction = Directions.Down;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (changing == Changing.Size) // we are going to resize our pictureBox
+            {
+                pictureBox1.Location = new Point(10, 10); // move pictureBox to upper left-hand corner
+                if (direction == Directions.Bigger) ChangeSizeBigger();
+                else ChangeSizeSmaller();
+            }
+            else if (changing == Changing.Location)
+            {
+                pictureBox1.Location = new Point(10, 10); // move pictureBox to upper left-hand corner
+                ChangeLocation();
+            }
+            else if (changing == Changing.Rotation) SpinSomething();
+
+        }
+
+        private void SpinSomething()
+        {
+            Image img = new Bitmap(pictureBox1.Image);
+            img.RotateFlip(RotateFlipType.Rotate90FlipNone);
+            pictureBox1.Image = img;
+        }
+        private void ChangeSizeBigger()
+        {
+            if (pictureBox1.Height < FormHeight && pictureBox1.Width < FormWidth)
+                pictureBox1.Size = new Size(pictureBox1.Width + 20, pictureBox1.Height + 8);
+            else
+                direction = Directions.Smaller;
+        }
+
+        private void ChangeSizeSmaller()
+        {
+            if (pictureBox1.Height > 10 && pictureBox1.Width > 10)
+                pictureBox1.Size = new Size(pictureBox1.Width - 20, pictureBox1.Height - 8);
+            else
+                direction = Directions.Bigger;
+        }
+
+        private void StartStopButton_Click(object sender, EventArgs e)
+        {
+            if (StartStopButton.Text == "Start")
+            {
+                timer1.Enabled = true;
+                StartStopButton.Text = "Stop";
+            }
+            else
+            {
+                timer1.Enabled = false;
+                StartStopButton.Text = "Start";
+            }
+        }
+
+        private void ChangeLocation()
+        {
+            if (controller == Controller.Button)
+            {
+                if (direction == Directions.Left)
+                {
+                    if (x_location > 10)
+                    {
+                        x_location -= 10;
+                        pictureBox1.Left = x_location;
+                    }
+                    else PickDirection();
+                }
+                else if (direction == Directions.Right)
+                {
+                    if (x_location + 10 < FormWidth - 100)
+                    {
+                        x_location += 10;
+                        pictureBox1.Left = x_location;
+                    }
+                    else PickDirection();
+                }
+                else if (direction == Directions.Up)
+                {
+                    if (y_location > 10)
+                    {
+                        y_location -= 10;
+                        pictureBox1.Top = y_location;
+                    }
+                    else PickDirection();
+                }
+                else if (direction == Directions.Down)
+                {
+                    if (y_location < FormHeight - 100)
+                    {
+                        y_location += 10;
+                        pictureBox1.Top = y_location;
+                    }
+                    else PickDirection();
+                }
+            }
+            else if (controller == Controller.Keyboard)
+            {
+                if (direction == Directions.Left && x_location >= 20) x_location -= 10;
+                else if (direction == Directions.Right && x_location < FormWidth - 50 - 20) x_location += 10;
+                else if (direction == Directions.Up && y_location >= 20) y_location -= 10;
+                else if (direction == Directions.Down && y_location <= FormHeight - 50 - 20) y_location += 10;
+
+                pictureBox1.Location = new Point (x_location, y_location);
+            }
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Left) direction = Directions.Left;
+            else if (e.KeyCode == Keys.Right) direction = Directions.Right;
+            else if (e.KeyCode == Keys.Up) direction = Directions.Up;
+            else if (e.KeyCode == Keys.Down) direction = Directions.Down;
+        }
+    }
+}
