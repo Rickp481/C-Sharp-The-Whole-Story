@@ -1,0 +1,113 @@
+namespace Chapter_13_Multi_Select_Wizard
+{
+    public partial class Wizard : Form
+    {
+        public Wizard()
+        {
+            InitializeComponent();
+        }
+
+        private void Wizard_Load(object sender, EventArgs e)
+        {
+            setup_listboxes();
+            MoveRightButton.Text = "\u2192" + "\u2192" + "\u2192";    // Unicode for right arrow
+            MoveLeftButton.Text = "\u2190" + "\u2190" + "\u2190";     // Unicode for left arrow
+
+            // populate comboBox1 and clear comboBox2
+            populate_comboBox1();
+            RightComboBox.Items.Clear();
+        }
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            populate_comboBox2();
+        }
+
+        private void populate_comboBox1()
+        {
+            for (int i = 0; i < 10; i++) LeftComboBox.Items.Add("Number " + i);
+        }
+        private void populate_comboBox2()
+        {
+            string selectedText = LeftComboBox.SelectedItem.ToString();
+
+            // add the selected item to comboBox2
+            RightComboBox.Items.Clear();
+            RightComboBox.Items.Add(selectedText);
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            LeftComboBox.Items.Clear();
+            populate_comboBox1();
+            RightComboBox.Items.Clear();
+        }
+
+        private void setup_listboxes()
+        {
+            LeftListBox.Items.Clear();
+            RightListBox.Items.Clear();
+
+            for (int i = 0; i < 10; i++)
+            {
+                LeftListBox.Items.Insert(i, "Item number " + i);
+            }
+
+            LeftListBox.Sorted = true;
+            RightListBox.Sorted = true;
+        }
+
+        private void AllLeftButton_Click(object sender, EventArgs e)
+        {
+            // set all items in the left ListBox to selected
+            for (int i = 0; i < LeftListBox.Items.Count; i++) LeftListBox.SetSelected(i, true);
+        }
+
+        private void AllRightButton_Click(object sender, EventArgs e)
+        {
+            // set all items in the right ListBox to selected
+            for (int i = 0; i < RightListBox.Items.Count; i++) RightListBox.SetSelected(i, true);
+        }
+
+        private void MoveRightButton_Click(object sender, EventArgs e)
+        {
+            // if left ListBox item is selected move it to right ListBox
+            for (int i = 0; i < LeftListBox.Items.Count; i++)
+            {
+                if (LeftListBox.GetSelected(i) == true) // it is selected
+                    RightListBox.Items.Add(LeftListBox.Items[i]);
+            }
+
+            // now reverse the loop for the removes
+            for (int i = LeftListBox.Items.Count-1; i >= 0; i--)
+            {
+                if (LeftListBox.GetSelected(i) == true) LeftListBox.Items.RemoveAt(i);
+            }
+        }
+
+        private void MoveLeftButton_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < RightListBox.Items.Count; i++)
+            {
+                if (RightListBox.GetSelected(i) == true)
+                    LeftListBox.Items.Add(RightListBox.Items[i]);
+            }
+
+            for (int i = RightListBox.Items.Count-1; i >= 0; i--)
+            {
+                if (RightListBox.GetSelected(i) == true) RightListBox.Items.RemoveAt(i);
+            }
+        }
+
+        private void resetButton_Click(object sender, EventArgs e)
+        {
+            setup_listboxes();
+        }
+
+        private void submitButton_Click(object sender, EventArgs e)
+        {
+            // this would read all items in RightListBox into a collection
+            // and then pass that collection off to another page for processing
+        }
+    }
+}
