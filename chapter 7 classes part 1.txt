@@ -1,0 +1,115 @@
+using System.ComponentModel.DataAnnotations;
+
+class Cube
+{
+    private double l, w, h;
+
+    public void setLength(double length)
+    { l = length; }
+
+    public void setWidth(double width)
+    { w = width; }
+
+    public void setHeight(double height)
+    { h = height; }
+
+    public double getVolume()
+        { return l * w * h; }
+}
+
+class Person
+{
+    private string fn, ln, g;
+    private int a;
+    private double w, h;
+
+    public Person
+        (
+            string firstname,   // parameterized constructor
+            string lastname,    // note the parentheses to delimit parameter list
+            string gender,
+            int age,
+            double weight,
+            double height
+        )
+    {
+        Console.WriteLine("Person object is being created in memory");  // normally not included
+        fn = firstname; // assign input parms to local private vars
+        ln = lastname;
+        g = gender;
+        a = age;
+        w = weight;
+        h = height;
+    }
+
+    public string getFirstName() { return fn; }
+
+    public string getLastName() { return ln; }
+
+    public string getGender() { return g; }
+
+    public int getAge() { return a; }
+
+    public double getHeight() { return h; }
+
+    public double getWidth() { return w; }
+
+    private bool isAFatty()
+    {
+        if (w / h > 2.25)     // encapsulate this logic
+            return true;
+        else
+            return false;
+    }
+
+    public bool failsBMI()
+    { return isAFatty(); }
+
+}
+class Program
+{
+    static void Main(string[] args)
+    {
+        /*
+        Cube cube1 = new Cube();
+        Cube cube2 = new Cube();
+
+        cube1.setHeight(2);
+        cube1.setWidth(5.5);
+        cube1.setLength(10);
+
+        cube2.setHeight(4);
+        cube2.setWidth(5.5);
+        cube2.setLength(10);
+
+        
+        Console.WriteLine("Volume of cube1 is {0}", cube1.getVolume());
+        Console.WriteLine("Volume of cube2 is {0}", cube2.getVolume());
+        */
+
+        Person p1 = new Person("Rick", "Phillips", "Male", 67, 210, 72);
+        Person p2 = new Person(weight: 150, height: 75, age: 39, firstname: "David", lastname: "Phillips", gender: "Male");
+
+        if (p1.failsBMI())
+            Console.WriteLine("{0} loose some weight", p1.getFirstName());
+        else
+            Console.WriteLine("{0} the gym is really starting to pay off", p1.getFirstName());
+
+        if (p2.failsBMI())
+            Console.WriteLine("{0} loose some weight", p2.getFirstName());
+        else
+            Console.WriteLine("{0} the gym is really starting to pay off", p2.getFirstName());
+
+        p1 = p2;    // classes are passed by reference so now p1 points at p2 memory
+
+        if (p1.failsBMI())
+            Console.WriteLine("{0} loose some weight", p1.getFirstName());
+        else
+            Console.WriteLine("{0} the gym is really starting to pay off", p1.getFirstName());
+
+        if (p2.failsBMI())
+            Console.WriteLine("{0} loose some weight", p2.getFirstName());
+        else
+            Console.WriteLine("{0} the gym is really starting to pay off", p2.getFirstName());
+    }
+}
