@@ -1,0 +1,126 @@
+using System.Collections;
+using System.Xml.Schema;
+
+int[] values = new int[] {100, 200, 300, 400, 500};
+int[,] twodim = new int[10,5];
+int[,,] threedim = new int[10, 5, 5];
+
+for (int i = 0; i< values.Length; i++) Console.WriteLine(values[i]);
+for (int i = 0; i < 10; i++)
+{
+    for (int j = 0; j < 5; j++)
+    {
+        twodim[i, j] = i * j;
+        Console.WriteLine("i = {0} and j={1} so i*j={2}", i, j, twodim[i, j]);
+    }
+}
+
+
+for (int i = 0; i < 10; i++)
+{
+    for (int j = 0; j < 5; j++)
+    {
+        for (int k = 0; k < 5; k++)
+        {
+            threedim[i, j, k] = i * j + k;
+            Console.WriteLine("i = {0}, j={1} and k={2} so i*j+k = {3}", i, j, k, threedim[i, j, k]);
+        }
+    }
+}
+
+ 
+ArrayList myStuff = new ArrayList();    // ArrayList can add/delete memory dynamically
+for  (int i = 0; i < 10; i++)
+{
+    myStuff.Add(i % 5);
+    Console.WriteLine("value of myStuff[{0}] = {1}", i, myStuff[i]);
+}
+
+myStuff.Sort();
+for (int i = 0; i < myStuff.Count; i++)
+    Console.WriteLine("Sorted value of myStuff[{0}] = {1}", i, myStuff[i]);
+
+ArrayList myStuff2 = new ArrayList(25); // allocate memory here
+for (int i = 97; i < 100; i++)
+{
+    myStuff2[i] = (char)i;
+    Console.WriteLine("The ASCII equivalent of {0} is {1}", i, myStuff2[i]);
+}
+
+Person me = new Person ();
+Person myWife = new Person ();
+me.getValues(0, "Rick", "Phillips", 67, "Male");
+myWife.getValues(1, "Mary", "Phillips", 66, "Female");
+
+me.displayValues();
+myWife.displayValues();
+
+ 
+struct Person
+{
+    private int i, a;
+    private string f, l, g;
+
+    public void getValues(int ID, string fname, string lname, int age, string gender)
+    {
+        i = ID;
+        f = fname;
+        l = lname;
+        a = age;
+        g = gender;
+    }
+
+    public void displayValues()
+    {
+        Console.WriteLine("{0} {1} is ID {2}, age = {3} and gender = {4}", f, l, i, a, g);
+    }
+}
+
+
+ 
+Person me = new Person();
+Person myWife = new Person();
+Person[] myArray = new Person[2];   // create an 1-dim array of Person struct
+
+me.getValues(0, "Rick", "Phillips", 67, "Male");
+myWife.getValues(1, "Mary", "Phillips", 66, "Female");
+
+myArray[0] = me;
+myArray[1] = myWife;
+
+myArray[0].displayValues(); // please note how the array element has acess to struct method
+myArray[1].displayValues();
+
+struct Person
+{
+    private int i, a;
+    private string f, l, g;
+
+    public void getValues(int ID, string fname, string lname, int age, string gender)
+    {
+        i = ID;
+        f = fname;
+        l = lname;
+        a = age;
+        g = gender;
+    }
+
+    public void displayValues()
+    {
+        Console.WriteLine("{0} {1} is ID {2}, age = {3} and gender = {4}", f, l, i, a, g);
+    }
+}
+
+
+int myEyes, myBday;
+
+myEyes = (int)Colors.Blue;
+myBday = (int)Months.February;
+
+Console.WriteLine("Rick's eyes are {0} which as a string is equal to {1}", myEyes, Colors.Blue);
+Console.WriteLine("Rick's birthday is in {0} which as a string is equal to {1}", myBday, Months.February);
+
+enum Colors { Red, Orange, Yellow, Green, Blue, Indigo, Violet };
+enum Months { January, February, March, April, May, June, July, August, September, October, November, December};
+enum LineStyles { Solid, Dashed, Hyphens, Asterisks, Underlines, Tildes};
+
