@@ -1,0 +1,74 @@
+using System.Linq.Expressions;
+using System.Runtime.ExceptionServices;
+
+namespace namespace1
+{
+    class Person
+    {
+        private string fn, ln;
+        public string fname { get { return fn; } set { fn = value; } }
+        public string lname { get { return ln; } set { ln = value; } }
+    }
+
+    public class NoName : Exception
+    {
+        public NoName() { }
+        public NoName(string msg) : base(msg) { }
+
+        public NoName(string msg, Exception innerException) : base(msg, innerException) { }
+    }
+}
+
+namespace namespace2
+{
+    class Person  // with intentional error for demo purposes
+    {
+        private string fn, ln;
+        public string fname { get { return ln; } set { fn = value; } } 
+        public string lname { get { return ln; } set { ln = value; } }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        namespace1.Person RP = new namespace1.Person();
+      
+        RP.fname = "Rick";
+        RP.lname = "Phillips";
+        Console.WriteLine(RP.fname + " " + RP.lname);
+        namespace2.Person RP2 = new namespace2.Person();
+        RP2.fname = "Rick";
+        RP2.lname = "Phillips";
+        Console.WriteLine(RP2.fname + " " + RP2.lname);
+      
+        try
+        {
+            Console.WriteLine(RP.fname + " " + RP.lname);
+        }
+        catch (namespace1.NoName) when (RP.fname.Length == 0 || RP.lname.Length == 0)
+        {
+            throw new namespace1.NoName("Send this back to the calling routine for resolution");
+        }
+
+                                int[] myArray = new int[5];
+                                       for (int i = 0; i < 10; i++)
+                                            try // this contains the code which may contain an error
+                                            {
+                                                myArray[i] = i;
+                                                Console.WriteLine(myArray[i]);
+                                            }
+                                            catch (IndexOutOfRangeException e)
+                                            {
+                                                Console.WriteLine("An error of type {0} has occurred at index {1}", e, i);
+                                            }
+                                for (int i = 0; i < myArray.Length; i++)
+                                {
+                                    myArray[i] = i;
+                                    Console.WriteLine(myArray[i]);
+                                }
+                            }
+        
+    }
+    
