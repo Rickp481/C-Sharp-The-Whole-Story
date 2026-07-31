@@ -1,0 +1,44 @@
+class Person
+{
+    string firstname, lastname, gender;
+    double age, weight, height;
+
+    public Person
+        (
+            string firstname = "Not Specified",
+            string lastname = "Not Specified",
+            string gender = "Not Specified",    // Not Specified is the default if not provided
+            double age = -1, // -1 is default if not provided
+            double weight = -1,
+            double height = -1
+        )
+    {
+        if (firstname == "Not Specified" || lastname == "Not Specified")
+        {
+            Console.WriteLine("Throw an error back to the calling routine indicating missing parms");
+            Console.WriteLine("We will learn how to do this in the next lesson");
+        }
+
+        this.firstname = firstname; // this keyword refers to current instance
+        this.lastname = lastname;
+        this.gender = gender;
+        this.age = age;
+        this.weight = weight;
+        this.height = height;
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Person person1 = new Person("Rick", "Phillips");
+            Person person2 = new Person(firstname: "Rick"); // this should invoke the error handler
+            Console.WriteLine("We have some defaults in our constructor {0}, {1}, {2}, {3}, {4}, {5}",
+                person1.firstname, person1.lastname, person1.gender, person1.age, person1.weight, person1.height);
+            // did you notice how I was able to continue command on next line 
+            // command continues until you reach the semicolon
+        }
+    }
+}
+
+

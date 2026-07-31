@@ -1,0 +1,117 @@
+class Program
+{
+    static void Main (string[] args)
+    {
+        Family f = new Family();
+        f.LastName = "Phillips";
+
+        Father fa = new Father("Rick", "L");
+        fa.LastName = "Different";
+        Father fa2 = new Father ("Ben", "D", f);
+
+        Mother mo = new Mother ("Margret", "");
+        Mother mo2 = new Mother ("Margret", "" ,f);
+
+        Child ch = new Child ("Daniel", "A");
+        Child ch2 = new Child("Daniel","A",f);
+
+        // this will return blank values
+        Console.WriteLine("Father's last name = {0}", fa.LastName);
+        Console.WriteLine("Mother's last name = {0}", mo.LastName);
+        Console.WriteLine("Child's last name = {0}", ch.LastName);
+
+        // but we get inheritance on these
+        Console.WriteLine("Father2's last name = {0}", fa2.LastName);
+        Console.WriteLine("Mother2's last name = {0}", mo2.LastName);
+        Console.WriteLine("Child2's last name = {0}", ch2.LastName);
+
+        // call our new method on fa and fa2
+        Console.WriteLine("fa's full name is {0}", fa.concatNames());
+        Console.WriteLine("fa2's full name is {0}", fa2.concatNames());
+    }
+}
+
+class Family
+{
+    private string last_name, nationality;
+    public string LastName { get { return last_name; } set { last_name = value; } }
+    public string Nationality { get { return nationality; } set { nationality = value; } }
+}
+
+class Father : Family
+{
+    // base constructor
+    private string fn, mi;
+    public Father(string first_name, string middle_initial) 
+    {
+        fn= first_name;
+        mi= middle_initial;
+    }
+
+    // overloaded constructor
+    public Father(string first_name, string middle_initial, Family incomingFamily)
+    {
+        fn = first_name;
+        mi = middle_initial;
+        base.LastName = incomingFamily.LastName;
+    }
+
+    public string concatNames()
+    {
+        if (mi.Length > 0)
+            return fn + " " + mi + " " + LastName;
+        else
+            return fn + " " + LastName;
+    }
+}
+class Mother : Family
+{
+    // base constructor
+    string fn, mi;
+    public Mother(string first_name, string middle_initial) 
+    {
+        fn = first_name;
+        mi= middle_initial;
+    }
+
+    // overloaded constructor
+    public Mother(string first_name, string middle_initial,Family incomingFamily)
+    {
+        fn = first_name;
+        mi = middle_initial;
+        base.LastName = incomingFamily.LastName;
+    }
+    public string concatNames()
+    {
+        if (mi.Length > 0)
+            return fn + " " + mi + " " + LastName;
+        else
+            return fn + " " + LastName;
+    }
+}
+class Child : Family
+{
+    // base constructor
+    string fn, mi;
+    public Child(string first_name, string middle_initial) 
+    {
+        fn = first_name;
+        mi = middle_initial;
+    }
+
+    // overloaded constructor
+    public Child(string first_name, string middle_initial, Family incomingFamily)
+    {
+        fn = first_name;
+        mi = middle_initial;
+        base.LastName = incomingFamily.LastName;
+    }
+    public string concatNames()
+    {
+        if (mi.Length > 0)
+            return fn + " " + mi + " " + LastName;
+        else
+            return fn + " " + LastName;
+    }
+}
+
