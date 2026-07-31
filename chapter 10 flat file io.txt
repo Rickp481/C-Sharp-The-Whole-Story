@@ -1,0 +1,52 @@
+using System.IO;
+using System.Runtime.InteropServices;
+
+class program
+{
+    static void Main(string[] args)
+    {
+        /*
+        string myString = "Hello World";
+        string myString2 = "Rick is the Man";
+        string myPath = @"C:\Flat File IO Dir/Test.txt";
+        string myPath2 = @"C:\Flat File IO Dir/Test2.txt";
+
+        
+        StreamWriter sw1 = new StreamWriter(myPath);
+        sw1.WriteLine(myString);
+        sw1.Close();
+        
+
+        using (FileStream fs1 = new FileStream(myPath2, FileMode.OpenOrCreate))
+        using (BinaryWriter bw1 = new BinaryWriter(fs1))
+        {
+            for (int i = 0; i < myString2.Length; i++)
+            {
+                bw1.Write(myString2[i]);
+            }
+        }
+        
+        foreach (string myLine2 in File.ReadAllLines(myPath2)) Console.WriteLine(myLine2);
+
+        string myLine;
+        using (StreamReader sr1 = new StreamReader(myPath2))
+        {
+            while ((myLine = sr1.ReadLine()) != null) Console.WriteLine(myLine);
+        }
+        */
+
+        string parentDirectory = @"C:\Flat File IO Dir";
+        string subDirectory = "subdirectory1";
+        string fullPath = Path.Combine (parentDirectory, subDirectory);
+        string fileTest = @"C:\Flat File IO Dir\subdirectory1\Test.txt";
+
+        // create a subdir
+        Directory.CreateDirectory (fullPath);
+
+        // check for the existence of a file named fileTest in fullPath
+        if (File.Exists(fileTest))
+            Console.WriteLine("Found it");
+        else 
+            Console.WriteLine("File did not exist");
+    }
+}
