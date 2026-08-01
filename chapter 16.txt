@@ -1,0 +1,803 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Chapter_16__Online_Learning_and_Testing
+{
+
+    public class Course
+    {
+        public int Course_ID { get; set; }
+        public string Course_Type { get; set; }
+        public string Course_Stakes { get; set; }  // [High | Low]
+        public int Duration_In_Secs { get; set; } // -1 = not timed
+        public string Up_Or_Down { get; set; }
+        public bool Scored { get; set; } // [Yes | No]
+        public int Passing_Point { get; set; }
+        public Course(int course_id, string course_type, string course_stakes, int duration_in_secs,
+            string up_or_down, int passing_point)
+        {
+            Course_ID = course_id;
+            Course_Type = course_type;
+            Course_Stakes = course_stakes;
+            Duration_In_Secs = duration_in_secs;
+            Up_Or_Down = up_or_down;
+            Passing_Point = passing_point;
+        }
+    }
+
+    public class Item
+    {
+        public int Item_ID { get; set; }
+        public string Item_Type { get; set; }
+        public string Content_Ref { get; set; }
+        public bool Attachments {  get; set; }
+        public bool Message {  get; set; }  
+        public string Stem { get; set; }
+
+        public string Correct {  get; set; }
+        public string Distractor_1 { get; set; }
+        public string Distractor_2 { get; set; }
+        public string Distractor_3 { get; set; }
+        public string Distractor_4 { get; set; }
+
+        public Item (int item_ID, string item_Type, string content_Ref, bool attachments, bool message, string stem, string correct, string distractor_1, string distractor_2, string distractor_3, string distractor_4)
+        {
+            Item_ID = item_ID;
+            Item_Type = item_Type;
+            Content_Ref = content_Ref;
+            Attachments = attachments;
+            Message = message;
+            Stem = stem;
+            Correct = correct;
+            Distractor_1 = distractor_1;
+            Distractor_2 = distractor_2;
+            Distractor_3 = distractor_3;
+            Distractor_4 = distractor_4;
+        }
+    }
+    public class Globals
+    {
+        // this will store current item
+        public static Item my_item_global { get; set; }
+        // this will store all items in a test
+        public static Item[] my_items_global { get; set; }
+        public static int[] my_ints_global { get; set; }
+        // this will store the index of the current item
+        public static int my_current_index { get; set; }
+        // which option is correct
+        public static int my_correct_option_global { get; set; }
+    }
+
+    internal class Chapter_16_classes
+    {
+
+
+    }
+}
+
+
+using System.Net.Security;
+
+namespace Chapter_16__Online_Learning_and_Testing
+{
+    public partial class Form1 : Form
+    {
+        string up_or_down, stakes, type;
+        int duration_in_secs, passing_point;
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.Name = "Content";
+            this.Size = new System.Drawing.Size(820, 900);
+            this.Text = "Content";
+            this.timer1.Interval = 1000;
+
+            up_or_down = "Up";
+            stakes = "Low";
+            type = "MC";
+
+            duration_in_secs = 0;
+            passing_point = 80;
+
+            setup_timer();
+            timer1.Tick += new System.EventHandler(timer1_Tick);
+
+            Load_Bottom_Buttons();
+            Load_MC_Question_Type();
+
+            Item my_Item_1 = new Item(1, "MC", "", false, false, "In what year did the United States gain indepence?",
+                "1776", "1566", "2000", "1851", "1976");
+            Item my_Item_2 = new Item(2, "MC", "", false, false, "Are whales mammals?",
+                "Yes", "No", "", "", "");
+            Item my_Item_3 = new Item(3, "MC", "", false, false, "Horse hooves are equivalent to what part of the human body?",
+                "The fingernail and last toe bone", "Metatarsils", "Hair", "Nose", "");
+            Item my_Item_4 = new Item(4, "MC", "", false, false, "What is the square root of -1?",
+                "i", "e", "-1", "undefined", "");
+            Item my_Item_5 = new Item(5, "MC", "", false, false, "Is the C# programming language case sensitive?",
+                "True", "False", "", "", "");
+            Item[] my_items = new Item[]{my_Item_1, my_Item_2, my_Item_3, my_Item_4, my_Item_5};
+            Globals.my_items_global = my_items;
+
+            MC_test_driver(my_items);
+
+        }
+
+        private void MC_test_driver(Item[] my_items)
+        {
+            // randomize the questions
+            int[] ints = new int[my_items.Length];
+            int ints_index = -1, current_random = -1;
+            Random rnd = new Random();
+
+            for (int i = 0; i < my_items.Length; i++)
+            {
+                current_random = rnd.Next(my_items.Length);
+                bool found_it = false;
+                for (int j = 0; j < ints.Length; j++) 
+                    if (ints[j] == current_random) found_it = true;
+                if (found_it == false)
+                {
+                    ints_index += 1;
+                    ints[ints_index] = current_random;
+                }
+            }
+            Globals.my_item_global = my_items[0];
+            Globals.my_ints_global = ints;
+            Globals.my_current_index = 0;
+
+            Load_MC_Question_Data();
+        }
+
+        private void setup_MC_question_data()
+        {
+            // start by unchecking all RadioButtons
+            foreach (Control c in this.Controls)
+            {
+                if (c is GroupBox)
+                {
+                    foreach(Control c2 in c.Controls)
+                    {
+                        // all these are RadioButtons
+                        RadioButton rb = (RadioButton)c2;
+                        rb.Checked = false;
+                    }
+                }
+                else if (c is TextBox)
+                {
+                    TextBox textBox = (TextBox)c;
+                    textBox.Visible = true;
+                }
+            }
+
+            if (Globals.my_current_index == 0)
+            {
+                foreach (Control c in this.Controls)
+                {
+                    if (c is Button)
+                    {
+                        Button button = (Button)c;
+                        if (button.Text == "Previous") button.Visible = false;
+                    }
+                }
+
+            }
+            else if (Globals.my_current_index ==Globals.my_ints_global.Length)
+            {
+                foreach(Control c  in this.Controls)
+                {
+                    if (c is Button)
+                    {
+                        Button button = (Button)c;
+                        if (button.Text == "Next") button.Visible = false;
+                    }
+                }
+            }
+        }
+        private void Load_MC_Question_Data()
+        {
+            setup_MC_question_data();
+
+            // which option will hold the correct answer
+            // how many distractors do we have?
+            int number_distractors;
+            if (Globals.my_item_global.Distractor_2 == "") number_distractors = 1;
+            else if (Globals.my_item_global.Distractor_3 == "") number_distractors = 2;
+            else if (Globals.my_item_global.Distractor_4 == "") number_distractors = 3;
+            else number_distractors = 4;
+
+            // can't use Random because it will always come back with same sequence
+            // use mod on julian seconds of now instead
+            double currentSecond = DateTime.Now.TimeOfDay.TotalSeconds;
+            int julianSecond = (int)currentSecond;
+            // add the 1 for correct answer
+            int correct_answer = (julianSecond%(number_distractors + 1));
+
+            // Start with all Textboxes and RadioButtons visible
+            foreach (Control control in this.Controls)
+            {
+                if (control is TextBox)
+                {
+                    TextBox textBox = (TextBox)control;
+                    textBox.Visible = true;
+                }
+                else if (control is GroupBox)
+                {
+                    foreach (Control cc in control.Controls)
+                    {
+                        if (cc is RadioButton)
+                        {
+                            RadioButton radioButton = (RadioButton)cc;
+                            radioButton.Visible = true;
+                        }
+                    }
+                }
+            }
+
+            if (correct_answer == 0) // then option A is the correct answer
+            {
+                Globals.my_correct_option_global = 0;
+                if (number_distractors == 1)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_C") textBox.Visible = false;
+                            if (textBox.Name == "Option_D") textBox.Visible = false;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is GroupBox)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_C") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_D") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 2)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_D") textBox.Visible = false;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_D") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 3)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 4)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_E") textBox.Text = Globals.my_item_global.Distractor_4;
+                        }
+                    }
+                }
+            }
+            else if (correct_answer == 1) // then option B is the correct answer
+            {
+                Globals.my_correct_option_global = 1;
+                if (number_distractors == 1)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_C") textBox.Visible = false;
+                            if (textBox.Name == "Option_D") textBox.Visible = false;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_C") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_D") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 2)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_D") textBox.Visible = false;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_D") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 3)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 4)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_E") textBox.Text = Globals.my_item_global.Distractor_4;
+                        }
+                    }
+                }
+            }
+            else if (correct_answer == 2) // then option C is the correct answer
+            {
+                Globals.my_correct_option_global = 2;
+                if (number_distractors == 2)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_D") textBox.Visible = false;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_D") radioButton.Visible = false;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 3)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 4)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_E") textBox.Text = Globals.my_item_global.Distractor_4;
+                        }
+                    }
+                }
+            }
+            else if (correct_answer == 3) // then option D is the correct answer
+            {
+                Globals.my_correct_option_global = 3;
+                if (number_distractors == 3)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_E") textBox.Visible = false;
+                        }
+                        else if (c is RadioButton)
+                        {
+                            foreach (Control cc in c.Controls)
+                            {
+                                RadioButton radioButton = (RadioButton)cc;
+                                if (radioButton.Name == "Radio_Button_E") radioButton.Visible = false;
+                            }
+                        }
+                    }
+                }
+                else if (number_distractors == 4)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Correct;
+                            if (textBox.Name == "Option_E") textBox.Text = Globals.my_item_global.Distractor_4;
+                        }
+                    }
+                }
+            }
+            else if (correct_answer == 4) // then option E is the correct answer
+            {
+                Globals.my_correct_option_global = 4;
+                if (number_distractors == 4)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TextBox)
+                        {
+                            TextBox textBox = (TextBox)c;
+                            if (textBox.Name == "Stem") textBox.Text = Globals.my_item_global.Stem;
+                            if (textBox.Name == "Option_A") textBox.Text = Globals.my_item_global.Distractor_1;
+                            if (textBox.Name == "Option_B") textBox.Text = Globals.my_item_global.Distractor_2;
+                            if (textBox.Name == "Option_C") textBox.Text = Globals.my_item_global.Distractor_3;
+                            if (textBox.Name == "Option_D") textBox.Text = Globals.my_item_global.Distractor_4;
+                            if (textBox.Name == "Option_E") textBox.Text = Globals.my_item_global.Correct;
+                        }
+                    }
+                }
+            }
+
+        }
+        private void Load_MC_Question_Type()
+        {
+            // clear out all form controls except for timer1 (index 0) and timer label (index 1)
+            // bottom buttons are controls 2-5
+            for (int i = this.Controls.Count - 1; i > 5; i--) this.Controls.Remove(this.Controls[i]);
+
+            Font my_font = new Font("Segoe", 12);
+
+            TextBox Stem = new TextBox();
+            Stem.Name = "Stem";
+            Stem.Font = my_font;
+            Stem.Location = new System.Drawing.Point(40, 60);
+            Stem.Multiline = true;
+            Stem.ReadOnly = true;
+            Stem.ScrollBars = ScrollBars.Vertical;
+            Stem.Size = new System.Drawing.Size(720, 100);
+            this.Controls.Add(Stem);
+
+            TextBox Option_A = new TextBox();
+            Option_A.Name = "Option_A";
+            Option_A.Font = my_font;
+            Option_A.Location = new System.Drawing.Point(100, 180);
+            Option_A.Multiline = true;
+            Option_A.ReadOnly = true;
+            Option_A.ScrollBars = ScrollBars.Vertical;
+            Option_A.Size = new System.Drawing.Size(655, 100);
+            this.Controls.Add(Option_A);
+
+            TextBox Option_B = new TextBox();
+            Option_B.Name = "Option_B";
+            Option_B.Font = my_font;
+            Option_B.Location = new System.Drawing.Point(100, 290);
+            Option_B.Multiline = true;
+            Option_B.ReadOnly = true;
+            Option_B.ScrollBars = ScrollBars.Vertical;
+            Option_B.Size = new System.Drawing.Size(655, 100);
+            this.Controls.Add(Option_B);
+
+            TextBox Option_C = new TextBox();
+            Option_C.Name = "Option_C";
+            Option_C.Font = my_font;
+            Option_C.Location = new System.Drawing.Point(100, 400);
+            Option_C.Multiline = true;
+            Option_C.ReadOnly = true;
+            Option_C.ScrollBars = ScrollBars.Vertical;
+            Option_C.Size = new System.Drawing.Size(655, 100);
+            this.Controls.Add(Option_C);
+
+            TextBox Option_D = new TextBox();
+            Option_D.Name = "Option_D";
+            Option_D.Font = my_font;
+            Option_D.Location = new System.Drawing.Point(100, 510);
+            Option_D.Multiline = true;
+            Option_D.ReadOnly = true;
+            Option_D.ScrollBars = ScrollBars.Vertical;
+            Option_D.Size = new System.Drawing.Size(655, 100);
+            this.Controls.Add(Option_D);
+
+            TextBox Option_E = new TextBox();
+            Option_E.Name = "Option_E";
+            Option_E.Font = my_font;
+            Option_E.Location = new System.Drawing.Point(100, 620);
+            Option_E.Multiline = true;
+            Option_E.ReadOnly = true;
+            Option_E.ScrollBars = ScrollBars.Vertical;
+            Option_E.Size = new System.Drawing.Size(655, 100);
+            this.Controls.Add(Option_E);
+        
+            Font my_font2 = new Font ("Segoe",14,FontStyle.Bold);
+
+            GroupBox myGroupBox = new GroupBox();
+            myGroupBox.Location = new System.Drawing.Point(0, 0);
+            myGroupBox.Size = new System.Drawing.Size(100, 700);
+            this.Controls .Add(myGroupBox);
+
+            RadioButton Radio_Button_A = new RadioButton();
+            Radio_Button_A.Name = "Radio_Button_A";
+            Radio_Button_A.Text = "A)";
+            Radio_Button_A.Font = my_font2;
+            Radio_Button_A.Location = new System.Drawing.Point(40, 200);
+            myGroupBox.Controls .Add(Radio_Button_A);
+
+            RadioButton Radio_Button_B = new RadioButton();
+            Radio_Button_B.Name = "Radio_Button_B";
+            Radio_Button_B.Text = "B)";
+            Radio_Button_B.Font = my_font2;
+            Radio_Button_B.Location = new System.Drawing.Point(40, 310);
+            myGroupBox.Controls.Add(Radio_Button_B);
+
+            RadioButton Radio_Button_C = new RadioButton();
+            Radio_Button_C.Name = "Radio_Button_C";
+            Radio_Button_C.Text = "C)";
+            Radio_Button_C.Font = my_font2;
+            Radio_Button_C.Location = new System.Drawing.Point(40, 420);
+            myGroupBox.Controls.Add(Radio_Button_C);
+
+            RadioButton Radio_Button_D = new RadioButton();
+            Radio_Button_D.Name = "Radio_Button_D";
+            Radio_Button_D.Text = "D)";
+            Radio_Button_D.Font = my_font2;
+            Radio_Button_D.Location = new System.Drawing.Point(40, 530);
+            myGroupBox.Controls.Add(Radio_Button_D);
+
+            RadioButton Radio_Button_E = new RadioButton();
+            Radio_Button_E.Name = "Radio_Button_E";
+            Radio_Button_E.Text = "E)";
+            Radio_Button_E.Font = my_font2;
+            Radio_Button_E.Location = new System.Drawing.Point(40, 640);
+            myGroupBox.Controls.Add(Radio_Button_E);
+        }
+
+        private void Prev_Button_Click(object sender, EventArgs e)
+        {
+            Globals.my_current_index -= 1;
+            Globals.my_item_global = Globals.my_items_global[Globals.my_current_index];
+            //record_current_item_results();
+            Load_MC_Question_Data();
+        }
+
+        private void Next_Button_Click(object sender, EventArgs e)
+        {
+            Globals.my_current_index += 1;
+            Globals.my_item_global = Globals.my_items_global[Globals.my_current_index];
+            //record_current_item_results();
+            Load_MC_Question_Data();
+        }
+
+        private void Refresh_Button_Click (object sender, EventArgs e)
+        {
+            Load_MC_Question_Data();
+        }
+
+        private void Submit_Button_Click(Object sender, EventArgs e)
+        {
+           
+        }
+        private void Load_Bottom_Buttons()
+        {
+            Button Prev_Button = new Button();
+            Button Next_Button = new Button();
+            Button Submit_Button = new Button();
+            Button Refresh_Button = new Button();
+
+            Prev_Button.Text = "Previous";
+            Prev_Button.Location = new System.Drawing.Point(50, 800);
+            Prev_Button.Size = new System.Drawing.Size(100, 35);
+            Prev_Button.FlatStyle = FlatStyle.Popup;
+            Prev_Button.Click += Prev_Button_Click;
+            this.Controls.Add( Prev_Button );
+
+            Next_Button.Text = "Next";
+            Next_Button.Location = new System.Drawing.Point(250, 800);
+            Next_Button.Size = new System.Drawing.Size(100, 35);
+            Next_Button.FlatStyle= FlatStyle.Popup;
+            Next_Button.Click += Next_Button_Click;
+            this.Controls.Add(Next_Button);
+
+            Submit_Button.Text = "Submit";
+            Submit_Button.Location = new System.Drawing.Point(450, 800);
+            Submit_Button.Size = new System.Drawing.Size(100, 35);
+            Submit_Button.FlatStyle = FlatStyle.Popup;
+            // Submit_Button.Click += Submit_Button_Click;
+            this.Controls.Add(Submit_Button);
+
+            Refresh_Button.Text = "Refresh";
+            Refresh_Button.Location = new System.Drawing.Point(650, 800);
+            Refresh_Button.Size = new System.Drawing.Size(100, 35);
+            Refresh_Button.FlatStyle = FlatStyle.Popup;
+            Refresh_Button.Click += Refresh_Button_Click;
+            this.Controls.Add(Refresh_Button);
+        }
+
+        private void timer1_Tick (object sender, EventArgs e)
+        {
+            int time_in_minutes, time_in_seconds;
+            string time_in_minutes_s, time_in_seconds_s;
+
+            time_in_minutes = int.Parse((Digital_Clock.Text).Substring(0, 2));
+            time_in_seconds = int.Parse((Digital_Clock.Text).Substring(3, 2));
+
+            // if time has expired close the form
+            if (up_or_down == "Up" && ((time_in_minutes * 60) + time_in_seconds + 1) >= duration_in_secs) this.Close();
+            else if (up_or_down == "Down" && time_in_minutes == 0 && time_in_seconds == 0) this.Close();
+
+            // change Digital_Clock
+            else if (up_or_down == "Up" && time_in_seconds == 59) // end of a minute
+            {
+                time_in_seconds = 0;
+                time_in_minutes += 1;
+            }
+            else if (time_in_seconds == 0) // we are going down so decrement the minute
+            {
+                time_in_seconds = 0;
+                time_in_minutes -= 1;
+            }
+            else // just decrement seconds
+                time_in_seconds -= 1;
+
+            // now we update the display
+            time_in_minutes_s = time_in_minutes.ToString();
+            if (time_in_minutes_s.Length == 1) time_in_minutes_s = "0" + time_in_minutes_s;
+            time_in_seconds_s = time_in_seconds.ToString();
+            if (time_in_seconds_s.Length == 1) time_in_seconds_s = "0" + time_in_seconds_s;
+            Digital_Clock.Text = time_in_minutes_s + ":" + time_in_seconds_s;
+        }
+
+        private void setup_timer()
+        {
+            if (duration_in_secs == 0) // this course is not timed
+            {
+                timer1.Stop();
+                Digital_Clock.Visible = false;
+            }
+            else if (up_or_down == "Up")
+            {
+                Digital_Clock.Text = "00:00";
+                Digital_Clock.Visible=true;
+                timer1.Start();
+            }
+            else // up_or_down = "Down"
+            {
+                string time_in_minutes, time_in_seconds;
+
+                time_in_minutes = (duration_in_secs / 60).ToString();
+                time_in_seconds = (duration_in_secs % 60).ToString();
+
+                if (time_in_seconds == "0") time_in_seconds="00"; // just to make it look nicer
+
+                Digital_Clock.Text = time_in_minutes + ":" + time_in_seconds;
+                Digital_Clock.Visible=true;
+                timer1.Start();
+            }
+        }
+    }
+}
