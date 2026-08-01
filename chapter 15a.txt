@@ -1,0 +1,715 @@
+using storefront;
+using System.ComponentModel.Design;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Globalization;
+using System.Reflection;
+
+namespace chapter_15_storefront
+{
+
+    public partial class Form1 : Form
+    {
+        public car[] my_cars = new car[20];
+        int[] displayed_cars = new int[9];
+        Random random = new Random();
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.Size = new System.Drawing.Size(1210, 800);
+            AddLogo();
+            AddSwoosh();
+            AddSearchBar();
+            AddCarData();
+            AddGrid();
+        }
+
+        public void AddGrid()
+        {
+            int counter = 0;
+            int start_index = random.Next(3);
+
+            TableLayoutPanel parent_grid = new TableLayoutPanel();
+            parent_grid.CellBorderStyle = TableLayoutPanelCellBorderStyle.InsetDouble;
+            parent_grid.Location = new System.Drawing.Point(10, 160);
+            parent_grid.Size = new System.Drawing.Size(1175, 525);
+            parent_grid.ColumnCount = 3;
+            parent_grid.RowCount = 3;
+            this.Controls.Add(parent_grid);
+
+            ToolTip t1 = new ToolTip();
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    TableLayoutPanel child_grid = new TableLayoutPanel();
+                    child_grid.Size = new Size(380, 165);
+                    child_grid.RowCount = 3;
+                    child_grid.ColumnCount = 1;
+                    child_grid.CellBorderStyle = TableLayoutPanelCellBorderStyle.None;
+                    parent_grid.Controls.Add(child_grid);
+
+                    PictureBox pic = new PictureBox();
+                    pic.Name = "pic_" + i + "_" + j;
+                    pic.Size = new Size(395, 110);
+                    pic.SizeMode = PictureBoxSizeMode.StretchImage;
+
+                    t1.SetToolTip(pic, "Click any image to see details.");
+
+                    // add event handler and delegate via lambda operator
+                    if (i == 0 && j == 0) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 0].ID);
+                    else if (i == 0 && j == 1) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 1].ID);
+                    else if (i == 0 && j == 2) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 2].ID);
+                    else if (i == 1 && j == 0) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 3].ID);
+                    else if (i == 1 && j == 1) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 4].ID);
+                    else if (i == 1 && j == 2) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 5].ID);
+                    else if (i == 2 && j == 0) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 6].ID);
+                    else if (i == 2 && j == 1) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 7].ID);
+                    else if (i == 2 && j == 2) pic.Click += (sender2, e2) => ImageWasClicked(sender2, e2, my_cars[start_index + 8].ID);
+
+                    child_grid.Controls.Add(pic, 0, 0);
+
+                    // add label with text set to manufacturer + model to child grid
+                    Label l1 = new Label();
+                    l1.Name = "l1_" + i + "_" + j;
+                    Font my_font = new Font(FontFamily.GenericSansSerif, 10, FontStyle.Regular);
+                    l1.Font = my_font;
+                    child_grid.Controls.Add(l1, 0, 1);
+
+                    // add label with text set to price to child grid
+                    Label l2 = new Label();
+                    l2.Name = "l2_" + i + "_" + j;
+                    l2.Font = my_font;
+                    child_grid.Controls.Add(l2, 0, 2);
+
+                    counter++;
+                }
+            }
+            AddCarsToGrid(start_index);
+        }
+
+        private void AddCarsToGrid(int start_index)
+        {
+            int counter = 0;
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    foreach (Control c in this.Controls)
+                    {
+                        if (c is TableLayoutPanel)  // parent
+                        {
+                            foreach (Control c2 in c.Controls)
+                            {
+                                if (c2 is TableLayoutPanel)  // child
+                                {
+                                    foreach(Control c3 in c2.Controls)
+                                    {
+                                        if (c3 is PictureBox)
+                                        {
+                                            PictureBox p = (PictureBox)c3;
+                                            if (p.Name == "pic_" + i + "_" + j)
+                                            {
+                                                Image img = Image.FromFile(my_cars[start_index + counter].pics[0].filename);
+                                                p.Image = img;
+                                            }
+                                        }
+                                        if (c3 is Label)
+                                        {
+                                            Label l1 = (Label)c3;
+                                            if (l1.Name == "l1_" + i + "_" + j)
+                                            {
+                                                l1.Text = my_cars[start_index + counter].Manufacturer;
+                                            }
+                                            else if (l1.Name == "l2_" + i + "_" + j)
+                                            {
+                                                l1.Text = my_cars[start_index + counter].price.ToString("C", new CultureInfo("en-US"));
+                                                counter++;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void ImageWasClicked (object sender, EventArgs e, int index)
+        {
+            this.Hide();
+            CarDetails newPage = new CarDetails(my_cars[index]);
+            newPage.ShowDialog();
+            this.Close();
+        }
+
+        public void AddCarData()
+        {
+            // Acura NSX
+            my_cars[0] = new car();
+            my_cars[0].ID = 0;
+            my_cars[0].Manufacturer = "Acura";
+            my_cars[0].Model = "NSX";
+            my_cars[0].description = "The Acura NSX is a high-performance, two-seat sports car. The 2022 Type S variant " +
+                                     "features a 3.5L twin-turbo V6 and a 9-speed clutch. It has a top speed of approximately " +
+                                     "191 mph and can go from 0 to 60 mph in just over 3 seconds.";
+            my_cars[0].price = 250000;
+            my_cars[0].horsepower = 600;
+            my_cars[0].zero_to_sixty = 3.11;
+            my_cars[0].passed_search = true;
+            my_cars[0].pic_count = 2;
+            my_cars[0].vid_count = 0;
+            my_cars[0].pics[0] = new car_pic();
+            my_cars[0].pics[0].ID = 0;
+            my_cars[0].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Acura NSX 1.jpg";
+            my_cars[0].pics[1] = new car_pic();
+            my_cars[0].pics[1].ID = 1;
+            my_cars[0].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Acura NSX 2.jpg";
+
+            my_cars[1] = new car();
+            my_cars[1].ID = 1;
+            my_cars[1].Manufacturer = "Audi";
+            my_cars[1].Model = "R8";
+            my_cars[1].description = "The Audi R8 is a high-performance, mid-engine supercar with a 17 year production run which ended " +
+                                     "in 2024. Known for its V10 engine, all wheel drive and an available gated shifter.";
+            my_cars[1].price = 169000;
+            my_cars[1].horsepower = 690;
+            my_cars[1].zero_to_sixty = 3.00;
+            my_cars[1].passed_search = true;
+            my_cars[1].pic_count = 1;
+            my_cars[1].vid_count = 1;
+            my_cars[1].pics[0] = new car_pic();
+            my_cars[1].pics[0].ID = 0;
+            my_cars[1].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Audi R8.jpg";
+            my_cars[1].vids[0] = new car_vid();
+            my_cars[1].vids[0].ID = 0;
+            my_cars[1].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Audi R8 v1.mp4";
+            my_cars[1].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\audi R8 thumbnail.jpg";
+
+            my_cars[2] = new car();
+            my_cars[2].ID = 2;
+            my_cars[2].Manufacturer = "BMW";
+            my_cars[2].Model = "I8";
+            my_cars[2].description = "The BMW I8 is a plug-in hybrid sports car featuring a futuristic design with butterfly doors. " +
+                                     "This vehicle is available as a couple or roadster and pairs a 1.5L 3-cylinder engine with an " +
+                                     "electric motor for a combined 369 horsepower delivering 0-60 mph in 4.2 seconds.";
+            my_cars[2].price = 147500;
+            my_cars[2].horsepower = 369;
+            my_cars[2].zero_to_sixty = 4.2;
+            my_cars[2].passed_search = true;
+            my_cars[2].pic_count = 8;
+            my_cars[2].vid_count = 3;
+            my_cars[2].pics[0] = new car_pic();
+            my_cars[2].pics[0].ID = 0;
+            my_cars[2].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 Black 2.jpg";
+            my_cars[2].pics[1] = new car_pic();
+            my_cars[2].pics[1].ID = 1;
+            my_cars[2].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 Black.jpg";
+            my_cars[2].pics[2] = new car_pic();
+            my_cars[2].pics[2].ID = 2;
+            my_cars[2].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bmw I8 Blue.jpg";
+            my_cars[2].pics[3] = new car_pic();
+            my_cars[2].pics[3].ID = 3;
+            my_cars[2].pics[3].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 Convertible.jpg";
+            my_cars[2].pics[4] = new car_pic();
+            my_cars[2].pics[4].ID = 4;
+            my_cars[2].pics[4].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 Convertible 2.jpg";
+            my_cars[2].pics[5] = new car_pic();
+            my_cars[2].pics[5].ID = 5;
+            my_cars[2].pics[5].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 Convertible 3.jpg";
+            my_cars[2].pics[6] = new car_pic();
+            my_cars[2].pics[6].ID = 6;
+            my_cars[2].pics[6].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 White.jpg";
+            my_cars[2].pics[7] = new car_pic();
+            my_cars[2].pics[7].ID = 7;
+            my_cars[2].pics[7].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 White 2.jpg";
+            my_cars[2].vids[0] = new car_vid(); 
+            my_cars[2].vids[0].ID = 0;
+            my_cars[2].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 v1.mp4";
+            my_cars[2].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bmw I8 thumbnail 1.jpg";
+            my_cars[2].vids[1] = new car_vid();
+            my_cars[2].vids[1].ID = 1;
+            my_cars[2].vids[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 v2.mp4";
+            my_cars[2].vids[1].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bmw I8 thumbnail 2.jpg";
+            my_cars[2].vids[2] = new car_vid();
+            my_cars[2].vids[2].ID = 2;
+            my_cars[2].vids[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\BMW I8 v3 quirks.mp4";
+            my_cars[2].vids[2].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bmw I8 thumbnail 3.jpg";
+
+            my_cars[3] = new car();
+            my_cars[3].ID = 3;
+            my_cars[3].Manufacturer = "Bugatti";
+            my_cars[3].Model = "Chiron";
+            my_cars[3].description = "The Bugatti Chiron is a limited-production French hypercar known for its extreme performance. The Chiron features " +
+                                     "an 8.0L quad-turbo W16 engine producing over 1500 horsepower. This vehicle has a top speed of 260 mph and is able " +
+                                     "to go from 0 to 60 in less than 2.5 seconds. There are fewer than 500 Chirons in production.";
+            my_cars[3].price = 2500000;
+            my_cars[3].horsepower = 1500;
+            my_cars[3].zero_to_sixty = 2.5;
+            my_cars[3].passed_search = true;
+            my_cars[3].pic_count = 3;
+            my_cars[3].vid_count = 2;
+            my_cars[3].pics[0] = new car_pic();
+            my_cars[3].pics[0].ID = 0;
+            my_cars[3].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron 1.jpg";
+            my_cars[3].pics[1] = new car_pic();
+            my_cars[3].pics[1].ID = 0;
+            my_cars[3].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron 2.jpg";
+            my_cars[3].pics[2] = new car_pic();
+            my_cars[3].pics[2].ID = 0;
+            my_cars[3].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron 3.jpg";
+            my_cars[3].vids[0] = new car_vid();
+            my_cars[3].vids[0].ID = 0;
+            my_cars[3].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron 1.mp4";
+            my_cars[3].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron thumbnail 1.jpg";
+            my_cars[3].vids[1] = new car_vid();
+            my_cars[3].vids[1].ID = 1;
+            my_cars[3].vids[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron 2.mp4";
+            my_cars[3].vids[1].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\bugatti chiron thumbnail 2.jpg";
+
+            my_cars[4] = new car();
+            my_cars[4].ID = 4;
+            my_cars[4].Manufacturer = "Chevrolet";
+            my_cars[4].Model = "Corvette ZR1";
+            my_cars[4].description = "The Corvette ZR1 is the highest performance version of the Corvette line of automobiles by Chevrolet. " +
+                                     "The 2025 model sports a 5.8L twin-turbo V8 which can rocket the vehicle from zero to 60 in 1.89 seconds.";
+            my_cars[4].price = 225000;
+            my_cars[4].horsepower = 1064;
+            my_cars[4].zero_to_sixty = 1.89;
+            my_cars[4].passed_search = true;
+            my_cars[4].pic_count = 1;
+            my_cars[4].vid_count = 1;
+            my_cars[4].pics[0] = new car_pic();
+            my_cars[4].pics[0].ID = 0;
+            my_cars[4].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\corvette zr1.jpg";
+            my_cars[4].vids[0] = new car_vid();
+            my_cars[4].vids[0].ID = 0;
+            my_cars[4].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Corvette ZR1 v1.mp4";
+            my_cars[4].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\corvette zr1 thumbnail.jpg";
+
+            my_cars[5] = new car();
+            my_cars[5].ID = 5;
+            my_cars[5].Manufacturer = "Dodge";
+            my_cars[5].Model = "Dodge Challenger Hellcat";
+            my_cars[5].description = "Do you want to go really fast for relatively little money, then this is your car. " +
+                                     "This is Rick's personal choice when it comes to performance cars.";
+            my_cars[5].price = 80000;
+            my_cars[5].horsepower = 707;
+            my_cars[5].zero_to_sixty = 3.4;
+            my_cars[5].passed_search = true;
+            my_cars[5].pic_count = 3;
+            my_cars[5].vid_count = 2;
+            my_cars[5].pics[0] = new car_pic();
+            my_cars[5].pics[0].ID = 0;
+            my_cars[5].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\dodge challenger hellcat 1.jpg";
+            my_cars[5].pics[1] = new car_pic();
+            my_cars[5].pics[1].ID = 0;
+            my_cars[5].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\dodge challenger 2.jpg";
+            my_cars[5].pics[2] = new car_pic();
+            my_cars[5].pics[2].ID = 0;
+            my_cars[5].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\dodge challenger 3.jpg";
+            my_cars[5].vids[0] = new car_vid();
+            my_cars[5].vids[0].ID = 0;
+            my_cars[5].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Dodge Challenger Hellcat v1.mp4";
+            my_cars[5].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\dodge challenger hellcat thumbnail 1.jpg";
+            my_cars[5].vids[1] = new car_vid();
+            my_cars[5].vids[1].ID = 1;
+            my_cars[5].vids[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Dodge Challenger Hellcat v2.mp4";
+            my_cars[5].vids[1].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\dodge challenger hellcat thumbnail 2.jpg";
+
+            my_cars[6] = new car();
+            my_cars[6].ID = 6;
+            my_cars[6].Manufacturer = "Ferrari";
+            my_cars[6].Model = "Enzo";
+            my_cars[6].description = "The Ferrari Enzo (2002-2004) is an iconic V12 mid-engine supercar built to celebrate the company's founder.  " +
+                                     "It features a 651 hp naturally aspirated 6.0L V12 engine and a carbon-fiber chasis. Only 400 were produced. ";
+            my_cars[6].price = 5000000;
+            my_cars[6].horsepower = 651;
+            my_cars[6].zero_to_sixty = 3.3;
+            my_cars[6].passed_search = true;
+            my_cars[6].pic_count = 2;
+            my_cars[6].vid_count = 0;
+            my_cars[6].pics[0] = new car_pic();
+            my_cars[6].pics[0].ID = 0;
+            my_cars[6].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ferrari Enzo 1.jpg";
+            my_cars[6].pics[1] = new car_pic();
+            my_cars[6].pics[1].ID = 1;
+            my_cars[6].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ferrari Enzo 2.jpg";
+
+            my_cars[7] = new car();
+            my_cars[7].ID = 7;
+            my_cars[7].Manufacturer = "Ferrari";
+            my_cars[7].Model = "F40";
+            my_cars[7].description = "The Ferrari F40 (1987-1992) is an iconic mid-engine, rear-wheel-drive supercar created to celebrate Ferrari's 40 anniversary. " +
+                                     "It is reportedly the last model personally approved by Enzo Ferrari. The vehicle features a 2.9L twin-turbo engine producing  " +
+                                     "471 hp. The car has a top speed of over 200 mph. It is estimated that only about 1000 remain. ";
+            my_cars[7].price = 3000000;
+            my_cars[7].horsepower = 471;
+            my_cars[7].zero_to_sixty = 4.1;
+            my_cars[7].passed_search = true;
+            my_cars[7].pic_count = 4;
+            my_cars[7].vid_count = 0;
+            my_cars[7].pics[0] = new car_pic();
+            my_cars[7].pics[0].ID = 0;
+            my_cars[7].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\ferrari f40 1.jpg";
+            my_cars[7].pics[1] = new car_pic();
+            my_cars[7].pics[1].ID = 1;
+            my_cars[7].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\ferrari f40 2.jpg";
+            my_cars[7].pics[2] = new car_pic();
+            my_cars[7].pics[2].ID = 2;
+            my_cars[7].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\ferrari f40 3.jpg";
+            my_cars[7].pics[3] = new car_pic();
+            my_cars[7].pics[3].ID = 3;
+            my_cars[7].pics[3].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\ferrari f40 4.jpg";
+
+            my_cars[8] = new car();
+            my_cars[8].ID = 7;
+            my_cars[8].Manufacturer = "Ford";
+            my_cars[8].Model = "GT";
+            my_cars[8].description = "The GT in Ford GT stands for Grand Turismo, Italian for grand touring, meaning a powerful, stylish, and comfortable car. " +
+                                     "Not sure I'd want to drive across country in a GT, pretty cramped.  ";
+            my_cars[8].price = 400000;
+            my_cars[8].horsepower = 601;
+            my_cars[8].zero_to_sixty = 3.0;
+            my_cars[8].passed_search = true;
+            my_cars[8].pic_count = 7;
+            my_cars[8].vid_count = 2;
+            my_cars[8].pics[0] = new car_pic();
+            my_cars[8].pics[0].ID = 0;
+            my_cars[8].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT 2.jpg";
+            my_cars[8].pics[1] = new car_pic();
+            my_cars[8].pics[1].ID = 1;
+            my_cars[8].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT 3.jpg";
+            my_cars[8].pics[2] = new car_pic();
+            my_cars[8].pics[2].ID = 2;
+            my_cars[8].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT black.jpg";
+            my_cars[8].pics[3] = new car_pic();
+            my_cars[8].pics[3].ID = 3;
+            my_cars[8].pics[3].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT gray.jpg";
+            my_cars[8].pics[4] = new car_pic();
+            my_cars[8].pics[4].ID = 4;
+            my_cars[8].pics[4].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT white 1.jpg";
+            my_cars[8].pics[5] = new car_pic();
+            my_cars[8].pics[5].ID = 5;
+            my_cars[8].pics[5].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT yellow.jpg";
+            my_cars[8].pics[6] = new car_pic();
+            my_cars[8].pics[6].ID = 6;
+            my_cars[8].pics[6].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT.jpg";
+            my_cars[8].vids[0] = new car_vid();
+            my_cars[8].vids[0].ID = 0;
+            my_cars[8].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT v1.mp4";
+            my_cars[8].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\ford GT thumbnail 1.jpg";
+            my_cars[8].vids[1] = new car_vid();
+            my_cars[8].vids[1].ID = 1;
+            my_cars[8].vids[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Ford GT v2.mp4";
+            my_cars[8].vids[1].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\ford GT thumbnail 2.jpg";
+
+            my_cars[9] = new car();
+            my_cars[9].ID = 8;
+            my_cars[9].Manufacturer = "Lexus";
+            my_cars[9].Model = "LC 500";
+            my_cars[9].description = "A true luxury sports car. The LC 500 is a true gem for those who can afford one. ";
+            my_cars[9].price = 110000;
+            my_cars[9].horsepower = 471;
+            my_cars[9].zero_to_sixty = 4.5;
+            my_cars[9].passed_search = true;
+            my_cars[9].pic_count = 3;
+            my_cars[9].vid_count = 1;
+            my_cars[9].pics[0] = new car_pic();
+            my_cars[9].pics[0].ID = 0;
+            my_cars[9].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\lexus lc 500.jpg";
+            my_cars[9].pics[1] = new car_pic();
+            my_cars[9].pics[1].ID = 1;
+            my_cars[9].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\lexus lc 500 2.jpg";
+            my_cars[9].pics[2] = new car_pic();
+            my_cars[9].pics[2].ID = 2;
+            my_cars[9].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\lexus lc 500 3.jpg";
+            my_cars[9].vids[0] = new car_vid();
+            my_cars[9].vids[0].ID = 0;
+            my_cars[9].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Lexus LC 500 v1.mp4";
+            my_cars[9].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\lexus lc 500 thumbnail.jpg";
+
+            my_cars[10] = new car();
+            my_cars[10].ID = 9;
+            my_cars[10].Manufacturer = "Masserati";
+            my_cars[10].Model = "GranTourismo";
+            my_cars[10].description = "Track ready but also a commute car. Available in a 3.0L twin-turbo (550 hp) or electric version (761 hp). ";
+            my_cars[10].price = 145000;
+            my_cars[10].horsepower = 550;
+            my_cars[10].zero_to_sixty = 3.7;
+            my_cars[10].passed_search = true;
+            my_cars[10].pic_count = 5;
+            my_cars[10].vid_count = 1;
+            my_cars[10].pics[0] = new car_pic();
+            my_cars[10].pics[0].ID = 0;
+            my_cars[10].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\masserati 1.jpg";
+            my_cars[10].pics[1] = new car_pic();
+            my_cars[10].pics[1].ID = 1;
+            my_cars[10].pics[1].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\masserati 2.jpg";
+            my_cars[10].pics[2] = new car_pic();
+            my_cars[10].pics[2].ID = 2;
+            my_cars[10].pics[2].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\masserati 3.jpg";
+            my_cars[10].pics[3] = new car_pic();
+            my_cars[10].pics[3].ID = 0;
+            my_cars[10].pics[3].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\masserati 4.jpg";
+            my_cars[10].pics[4] = new car_pic();
+            my_cars[10].pics[4].ID = 0;
+            my_cars[10].pics[4].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\masserati 5.jpg";
+            my_cars[10].vids[0] = new car_vid();
+            my_cars[10].vids[0].ID = 0;
+            my_cars[10].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Masseratti Gran Tourismo v1.mp4";
+            my_cars[10].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\masserati gran tourismo thumbnail 1.jpg";
+
+            my_cars[11] = new car();
+            my_cars[11].ID = 10;
+            my_cars[11].Manufacturer = "Toyota";
+            my_cars[11].Model = "GR Supra";
+            my_cars[11].description = "The GR Supra is a high-performance, rear-wheel drive sports car developed by Toyota's Gazoo Racing (GR) division. " +
+                                      "The vehicle features a BMW sourced inline six cylinder engine with near perfect 50/50 weight distribution for superb handling.";
+            my_cars[11].price = 65000;
+            my_cars[11].horsepower = 382;
+            my_cars[11].zero_to_sixty = 3.9;
+            my_cars[11].passed_search = true;
+            my_cars[11].pic_count = 1;
+            my_cars[11].vid_count = 1;
+            my_cars[11].pics[0] = new car_pic();
+            my_cars[11].pics[0].ID = 0;
+            my_cars[11].pics[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\toyota GR Supra.jpg";
+            my_cars[11].vids[0] = new car_vid();
+            my_cars[11].vids[0].ID = 0;
+            my_cars[11].vids[0].filename = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\Toyota GR Supra v1.mp4";
+            my_cars[11].vids[0].thumbnail = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\cars\toyota GR Supra thumbnail.jpg";
+
+
+        }
+
+                public void AddSearchBar()
+        {
+            string my_search_icon_file = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\images\search icon.jpg";
+            Font myFont = new Font(FontFamily.GenericSansSerif,14,FontStyle.Bold);
+
+            Label search_label = new Label();
+            search_label.Font = myFont;
+            search_label.Text = "Search:";
+            search_label.Location = new System.Drawing.Point(350, 20);
+
+            Image my_search_icon = Image.FromFile(my_search_icon_file);
+            PictureBox search_icon_image = new PictureBox();
+            search_icon_image.Image = my_search_icon;
+            search_icon_image.Location = new System.Drawing.Point(951, 23);
+            search_icon_image.Size = new System.Drawing.Size(25, 25);
+            search_icon_image.SizeMode = PictureBoxSizeMode.StretchImage;
+            search_icon_image.BorderStyle = BorderStyle.FixedSingle;
+            search_icon_image.Click += new EventHandler(DoSearch); // uncomment when we build the routine
+
+            TextBox search_textbox = new TextBox();
+            search_textbox.Name = "SearchTextbox";
+            search_textbox.Font = myFont;
+            search_textbox.Size = new System.Drawing.Size(500, 20);
+            search_textbox.Text = "";
+            search_textbox.Location = new System.Drawing.Point(450, 20);
+            search_textbox.BorderStyle = BorderStyle.Fixed3D;
+
+            Label clear_x = new Label();
+            clear_x.Font = myFont;
+            clear_x.Text = "X";
+            clear_x.AutoSize = true;
+            clear_x.Location = new System.Drawing.Point(922, 21);
+            clear_x.BackColor = search_textbox.BackColor;
+            clear_x.Click += new EventHandler(ClearSearch); 
+
+            this.Controls.Add(search_label);
+            this.Controls.Add(clear_x);
+            this.Controls.Add(search_textbox);
+            this.Controls.Add(search_icon_image);
+
+        }
+
+        public void ClearSearch(object sender, EventArgs e)
+        {
+            ClearCars();
+            int start_index = random.Next(3);
+            AddCarsToGrid(start_index);
+        }
+
+        private void DoSearch(object sender, EventArgs e)
+        {
+            ClearCars();
+            ExecuteSearch();
+        }
+
+        private void ExecuteSearch()
+        {
+            WhichCars();
+            DisplayMatches();
+        }
+
+        private void WhichCars()
+        {
+            Array.Clear(displayed_cars, 0, displayed_cars.Length);
+
+            for (int i = 0; i < displayed_cars.Length; i++) displayed_cars[i] = -1; // indicates no car
+
+            // for some reason Visual Studio does not recognize the SearchTextbox name so I will force it
+            foreach (Control c in this.Controls)
+            {
+                if (c is TextBox)
+                {
+                    TextBox txt = (TextBox)c;
+                    int counter = 0;
+                    foreach (car a_car in my_cars)
+                    {
+                        if (a_car.Manufacturer.ToUpper().Contains(txt.Text.ToUpper()) ||
+                            a_car.Model.ToUpper().Contains(txt.Text.ToUpper()) ||
+                            a_car.description.ToUpper().Contains(txt.Text.ToUpper()))
+                        {
+                            if (counter < 8) // we only have room for 9 cars
+                            {
+                                displayed_cars[counter] = a_car.ID;
+                                counter++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        private void DisplayMatches()
+        {
+            car this_car = new car();
+            if (displayed_cars[0] == - -1) // no matches
+                MessageBox.Show("There were no matches to the entered criteria.");
+            else
+            {
+                for (int i = 0; i < displayed_cars.Length; i++)
+                {
+                    this_car = null;
+                    if (displayed_cars[i] >= 0)  // is a valid car ID
+                    {
+                        foreach (car a_car in my_cars)
+                            if (a_car.ID == displayed_cars[i]) this_car = a_car;    // this_car is now pointing to a car to display
+                    }
+                }
+
+                if (this_car != null)
+                {
+                    bool applied;
+                    foreach(Control a in this.Controls)
+                    {
+                        applied = false;
+                        if (a is TableLayoutPanel) // found parent
+                        {
+                            foreach(Control b in a.Controls)
+                            {
+                                if (b is TableLayoutPanel) // found child
+                                {
+                                    PictureBox p1 = (PictureBox)b.Controls[0]; // we know this because we know order we created objects in child grid
+                                    if (p1.Image == null && applied == false)
+                                    {
+                                        p1.Image = Image.FromFile (this_car.pics[0].filename);
+                                        Label l1 = (Label)b.Controls[1];
+                                        l1.Text = this_car.Manufacturer + " " + this_car.Model;
+                                        Label l2 = (Label)b.Controls[2];
+                                        l2.Text = this_car.price.ToString("C", new CultureInfo("en-US"));
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ClearCars()
+        {
+            foreach (Control c in this.Controls)
+            {
+                if (c is TableLayoutPanel)  // parent TableLayoutPanel
+                {
+                    foreach (Control d in c.Controls)
+                    {
+                        if (d is TableLayoutPanel)  // child TableLayoutPanel
+                        {
+                            foreach (Control e in d.Controls)
+                            {
+                                if (e is PictureBox)
+                                {
+                                    PictureBox pb1 = (PictureBox)e;
+                                    pb1.Image = null;
+                                }
+                                else if (e is Label)
+                                {
+                                    Label l1 = (Label)e;
+                                    l1.Text = "";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void AddSwoosh()
+        {
+            string my_swoosh_file = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\images\swoosh.jpg";
+            Size swoosh_size = new Size(950, 25);
+
+            if (File.Exists(my_swoosh_file))
+            {
+                Image my_swoosh = Image.FromFile(my_swoosh_file);
+
+                PictureBox pb1 = new PictureBox();
+                pb1.Image = my_swoosh;
+                pb1.Size = swoosh_size;
+                pb1.Location = new System.Drawing.Point(326, 50);
+                pb1.SizeMode = PictureBoxSizeMode.StretchImage;
+                this.Controls.Add(pb1);
+
+                PictureBox pb2 = new PictureBox();
+                pb2.Image = my_swoosh;
+                pb2.Size = swoosh_size;
+                pb2.Location = new System.Drawing.Point(326, 75);
+                pb2.SizeMode = PictureBoxSizeMode.StretchImage;
+                this.Controls.Add(pb2);
+
+                PictureBox pb3 = new PictureBox();
+                pb3.Image = my_swoosh;
+                pb3.Size = swoosh_size;
+                pb3.Location = new System.Drawing.Point(326, 100);
+                pb3.SizeMode = PictureBoxSizeMode.StretchImage;
+                this.Controls.Add(pb3);
+
+                PictureBox pb4 = new PictureBox();
+                pb4.Image = my_swoosh;
+                pb4.Size = swoosh_size;
+                pb4.Location = new System.Drawing.Point(326, 125);
+                pb4.SizeMode = PictureBoxSizeMode.StretchImage;
+                this.Controls.Add(pb4);
+
+            }
+        }
+        public void AddLogo()
+        {
+            string my_logo = @"F:\Documents\C# The Whole Story\Section 3 GUI Stuff\Chapter 15A storefront\images\logo.jpg";
+            if (File.Exists(my_logo))
+            {
+                Image logo = Image.FromFile(my_logo);
+                PictureBox lg = new PictureBox();
+                lg.Image = logo;
+                lg.Size = new System.Drawing.Size(325, 150);
+                lg.Location = new System.Drawing.Point(0, 0);
+                lg.SizeMode = PictureBoxSizeMode.StretchImage;
+                this.Controls.Add(lg);
+            }
+        }
+
+    }
+}
