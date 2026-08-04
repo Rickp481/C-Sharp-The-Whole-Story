@@ -1,0 +1,254 @@
+import { useState } from 'react'
+import './App.css'
+
+interface Question {
+  id: number
+  question: string
+  options: string[]
+  correctIndex: number
+}
+
+const questions: Question[] = [
+  {
+    id: 1,
+    question: "Is water wet?",
+    options: ["Yes", "No"],
+    correctIndex: 0,
+  },
+  {
+    id: 2,
+    question: "What are the primary colors of light?",
+    options: ["Red, Green, Blue", "Red, Yellow, Blue", "Cyan, Magenta, Yellow"],
+    correctIndex: 0,
+  },
+  {
+    id: 3,
+    question: "What is the capital of France?",
+    options: ["London", "Berlin", "Paris", "Madrid"],
+    correctIndex: 2,
+  },
+  {
+    id: 4,
+    question: "Which of these is NOT a programming language?",
+    options: ["Python", "Java", "HTML", "Ruby", "Go"],
+    correctIndex: 2,
+  },
+  {
+    id: 5,
+    question: "Is the Earth flat?",
+    options: ["Yes", "No"],
+    correctIndex: 1,
+  },
+  {
+    id: 6,
+    question: "Which state of matter has a fixed shape?",
+    options: ["Solid", "Liquid", "Gas"],
+    correctIndex: 0,
+  },
+  {
+    id: 7,
+    question: "Who painted the Mona Lisa?",
+    options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Michelangelo"],
+    correctIndex: 2,
+  },
+  {
+    id: 8,
+    question: "Which planet is known as the Red Planet?",
+    options: ["Venus", "Mars", "Jupiter", "Saturn", "Mercury"],
+    correctIndex: 1,
+  },
+]
+
+const optionLabels = ["A", "B", "C", "D", "E"]
+
+function App() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedOption, setSelectedOption] = useState<number | null>(null)
+  const [hasAnswered, setHasAnswered] = useState(false)
+  const [score, setScore] = useState(0)
+  const [isFinished, setIsFinished] = useState(false)
+  const [answers, setAnswers] = useState<(number | null)[]>(new Array(questions.length).fill(null))
+
+  const currentQuestion = questions[currentIndex]
+  const isCorrect = selectedOption === currentQuestion.correctIndex
+  const isLastQuestion = currentIndex === questions.length - 1
+
+  const handleSelect = (index: number) => {
+    if (hasAnswered) return
+    setSelectedOption(index)
+  }
+
+  const handleSubmit = () => {
+    if (selectedOption === null) return
+    setHasAnswered(true)
+    const newAnswers = [...answers]
+    newAnswers[currentIndex] = selectedOption
+    setAnswers(newAnswers)
+    if (selectedOption === currentQuestion.correctIndex) {
+      setScore((s) => s + 1)
+    }
+  }
+
+  const handleNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((i) => i + 1)
+      setSelectedOption(null)
+      setHasAnswered(false)
+    } else {
+      setIsFinished(true)
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1
+      setCurrentIndex(prevIndex)
+      setSelectedOption(answers[prevIndex])
+      setHasAnswered(answers[prevIndex] !== null)
+    }
+  }
+
+  const handleRestart = () => {
+    setCurrentIndex(0)
+    setSelectedOption(null)
+    setHasAnswered(false)
+    setScore(0)
+    setIsFinished(false)
+    setAnswers(new Array(questions.length).fill(null))
+  }
+
+  const getOptionStyle = (index: number) => {
+    if (!hasAnswered) {
+      return selectedOption === index
+        ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-500"
+        : "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/50"
+    }
+    if (index === currentQuestion.correctIndex) {
+      return "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500"
+    }
+    if (selectedOption === index) {
+      return "border-red-500 bg-red-50 ring-2 ring-red-500"
+    }
+    return "border-gray-200 bg-gray-50 opacity-60"
+fa  }
+
+  const getLabelStyle = (index: number) => {
+    if (!hasAnswered) {
+      return selectedOption === index
+        ? "bg-indigo-500 text-white"
+        : "bg-gray-100 text-gray-600"
+    }
+    if (index === currentQuestion.correctIndex) return "bg-emerald-500 text-white"
+    if (selectedOption === index) return "bg-red-500 text-white"
+    return "bg-gray-100 text-gray-400"
+  }
+
+  if (isFinished) {
+    const pct = Math.round((score / questions.length) * 100)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="text-6xl mb-4">{pct >= 80 ? "🏆" : pct >= 50 ? "👍" : "📚"}</div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quiz Complete!</h1>
+          <p className="text-lg text-gray-600 mb-6">
+            You scored <span className="font-bold text-indigo-600">{score}</span> out of <span className="font-bold">{questions.length}</span> ({pct}%)
+          </p>
+          <button
+            onClick={handleRestart}
+            className="py-3 px-8 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg">
+        {/* Progress */}
+        <div className="flex justify-between items-center mb-4">
+          <span className="text-sm font-medium text-gray-500">
+            Question {currentIndex + 1} of {questions.length}
+          </span>
+          <span className="text-sm font-medium text-indigo-600">
+            Score: {score}
+          </span>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
+            <h2 className="text-xl font-semibold text-white">{currentQuestion.question}</h2>
+          </div>
+
+          <div className="p-6 space-y-3">
+            {currentQuestion.options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleSelect(index)}
+                disabled={hasAnswered}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left ${getOptionStyle(index)}`}
+              >
+                <span className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${getLabelStyle(index)}`}>
+                  {optionLabels[index]}
+                </span>
+                <span className="text-base font-medium text-gray-800">{option}</span>
+                {hasAnswered && index === currentQuestion.correctIndex && (
+                  <span className="ml-auto text-emerald-500 font-bold">✓</span>
+                )}
+                {hasAnswered && selectedOption === index && index !== currentQuestion.correctIndex && (
+                  <span className="ml-auto text-red-500 font-bold">✗</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="px-6 pb-6">
+            {hasAnswered && (
+              <div className={`mb-4 p-3 rounded-lg text-center text-sm font-medium ${isCorrect ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                {isCorrect ? "Correct!" : `Incorrect. The answer is ${currentQuestion.options[currentQuestion.correctIndex]}.`}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              {currentIndex > 0 && (
+                <button
+                  onClick={handlePrevious}
+                  className="py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Previous
+                </button>
+              )}
+              {!hasAnswered ? (
+                <button
+                  onClick={handleSubmit}
+                  disabled={selectedOption === null}
+                  className={`flex-1 py-3 font-semibold rounded-xl transition-all ${
+                    selectedOption !== null
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  Submit Answer
+                </button>
+              ) : (
+                !isLastQuestion && (
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                  >
+                    Next Question
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App
