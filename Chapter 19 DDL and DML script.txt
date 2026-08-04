@@ -1,0 +1,196 @@
+use model;
+go
+
+create table Textbooks
+(
+	Textbook_ID		int				primary key,
+	Title			varchar(45)		not null,
+	Publisher		varchar(45)		not null,
+	Price			decimal(6,2)	not null
+);
+
+create table Departments
+(
+	Department		varchar(45)		primary key
+);
+
+create table Enrollment_Statuses
+(
+	Enrollment_Status	varchar(45)	primary key
+);
+
+create table Instructors
+(
+	Instructor_ID			int,
+	First_Name				varchar(45) not null,
+	Last_Name				varchar(45) not null,
+	Department				varchar(45) not null,
+	Department_Head			int,
+	constraint Instructors_pk primary key (Instructor_ID),
+	constraint Instructors_fk0 foreign key (Department) references Departments(Department),
+	constraint Instructors_fk1 foreign key (Department_Head) references Instructors(Instructor_ID)
+);
+go
+
+create table Students
+(
+	Student_ID				int			primary key,
+	First_Name				varchar(45) not null,
+	Last_Name				varchar(45) not null,
+	Phone					varchar(15) not null,
+	Email					varchar(45) not null,
+	Department_Major		varchar(45) default null,
+	Department_Minor		varchar(45) default null,
+	constraint Students_fk0 foreign key (Department_Major) references Departments(Department),
+	constraint Students_fk1 foreign key (Department_Minor) references Departments(Department)
+);
+go
+
+create table Courses
+(
+	Course_ID				int			primary key,
+	Title					varchar(45)	not null,
+	Department				varchar(45) not null,
+	constraint Courses_fk0 (Department) references Departments(Department)
+);
+
+
+create table Instructor_Courses
+(
+	Instructor_ID			int,
+	Course_ID				int,
+	Textbook_ID				int,
+	constraint Instructor_Courses_pk primary key (Instructor_ID, Course_ID, Textbook_ID),
+	constraint Instructor_Courses_fk0 foreign key (Instructor_ID) references Instructors(Instructor_ID),
+	constraint Instructor_Courses_fk1 foreign key (Course_ID) references Courses(Course_ID),
+	constraint Instructor_Courses_fk2 foreign key (Textbook_ID) references Textbooks(Textbook_ID)
+);
+
+create table Student_Courses
+(
+	Student_ID				int,
+	Course_ID				int,
+	Enrollment_Status		varchar(45) not null,
+	constraint Student_Courses_pk primary key (Student_ID, Course_ID),
+	constraint Student_Courses_fk0 foreign key (Student_ID) references Students(Student_ID),
+	constraint Student_Courses_fk1 foreign key (Course_ID) references Courses(Course_ID),
+	constraint Student_Courses_fk2 foreign key (Enrollment_Status) references Enrollment_Statuses(Enrollment_Status)
+);
+go
+
+begin transaction;
+
+insert into Departments (Department)
+values ('Biology');
+insert into Departments (Department)
+values ('Chemistry');
+insert into Departments (Department)
+values ('Computer Science');
+insert into Departments (Department)
+values ('English');
+insert into Departments (Department)
+values ('History');
+insert into Departments (Department)
+values ('Literature');
+insert into Departments (Department)
+values ('Political Science');
+
+Insert into Enrollment_Statuses (Enrollment_Status)
+values ('Major');
+Insert into Enrollment_Statuses (Enrollment_Status)
+values ('Minor');
+Insert into Enrollment_Statuses (Enrollment_Status)
+values ('Elective');
+Insert into Enrollment_Statuses (Enrollment_Status)
+values ('Audit');
+
+Insert into Textbooks (Textbook_ID, Title, Publisher, Price)
+values (1, 'C# The Whole Story','Badger Mountain Publishing',65.48);
+Insert into Textbooks (Textbook_ID, Title, Publisher, Price)
+values (2, 'C# From Beginner to Pro','Badger Mountain Publishing',72.28);
+Insert into Textbooks (Textbook_ID, Title, Publisher, Price)
+values (3, 'PL/SQL From Beginner to Pro','Badger Mountain Publishing',59.89);
+commit;
+
+begin transaction;
+insert into Instructors (Instructor_ID, First_Name, Last_Name, Department, Department_Head)
+values (1, 'Rick','Phillips','Computer_Science',null);
+insert into Instructors (Instructor_ID, First_Name, Last_Name, Department, Department_Head)
+values (2, 'Mary','Phillips','Computer_Science',1);
+insert into Instructors (Instructor_ID, First_Name, Last_Name, Department)
+values (3, 'Daniel','Phillips','Computer_Science');
+insert into Instructors (Instructor_ID, First_Name, Last_Name, Department, Department_Head)
+values (4, 'David','Phillips','Computer_Science',1);
+insert into Instructors (Instructor_ID, First_Name, Last_Name, Department)
+values (5, 'Ana','Phillips','Computer_Science');
+insert into Instructors (Instructor_ID, First_Name, Last_Name, Department, Department_Head)
+values (6, 'Lacy','Phillips','Computer_Science',5);
+
+insert into Courses (Course_ID, Title, Department)
+values (1, 'C# From Beginner to Pro','Computer Science');
+insert into Courses (Course_ID, Title, Department)
+values (2, 'C# The Whole Story','Computer Science');
+insert into Courses (Course_ID, Title, Department)
+values (3, 'PL/SQL From Beginner to Pro','Computer Science');
+insert into Courses (Course_ID, Title, Department)
+values (4, 'The Evolution of Primates','Biology');
+
+insert into Students (Student_ID, First_Name, Last_Name, Phone, Email, Department_Major, Department_Minor)
+values (1, 'Joe','Smoe','919-810-1234','someemail_1234@gmail.com','Computer Science','Chemistry');
+insert into Students (Student_ID, First_Name, Last_Name, Phone, Email, Department_Major, Department_Minor)
+values (2, 'Betty','Smith','129-810-1234','someemail_4321@gmail.com','Computer Science','Chemistry');
+insert into Students (Student_ID, First_Name, Last_Name, Phone, Email, Department_Major, Department_Minor)
+values (3, 'Jim','Elliott','919-818-9874','someemail_9512@gmail.com',null, null);
+insert into Students (Student_ID, First_Name, Last_Name, Phone, Email)
+values (1, 'Sussie','Smoe','159-810-1234','someemail_else@gmail.com');
+commit;
+
+begin transaction;
+
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (1,1,'Major');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (1,2,'Minor');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (1,3,'Audit');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (2,2,'Major');
+-- this will throw an fk reference error
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (2,3,'Invalid');
+
+Insert into Instructor_Courses (Instructor_ID, Course_ID, Textbook_ID)
+values (1,1,1);
+Insert into Instructor_Courses (Instructor_ID, Course_ID, Textbook_ID)
+values (1,2,2);
+Insert into Instructor_Courses (Instructor_ID, Course_ID, Textbook_ID)
+values (1,3,3);
+
+commit;
+
+select * from Student_Courses;
+
+-- try it again with valid data
+
+begin transaction;
+
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (1,1,'Major');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (1,2,'Minor');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (1,3,'Audit');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (2,2,'Major');
+insert into Student_Courses (Student_ID, Course_ID, Enrollment_Status)
+values (2,3,'Elective');
+
+Insert into Instructor_Courses (Instructor_ID, Course_ID, Textbook_ID)
+values (1,1,1);
+Insert into Instructor_Courses (Instructor_ID, Course_ID, Textbook_ID)
+values (1,2,2);
+Insert into Instructor_Courses (Instructor_ID, Course_ID, Textbook_ID)
+values (1,3,3);
+
+commit;
+
