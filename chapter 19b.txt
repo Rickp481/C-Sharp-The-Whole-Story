@@ -1,0 +1,110 @@
+use model;
+go
+
+create table temporary
+(
+	field_1			int			primary key,
+	field_2			varchar(50),
+	field_3			decimal(8,2)
+);
+go
+
+alter table temporary add field_4 datetime default current_timestamp;
+go
+
+alter table temporary drop column field_2;
+go
+
+drop table temporary;
+go
+
+use model;
+go
+
+-- we will not select Department_Head field because we don't know joins yet
+select Instructor_ID, First_Name, Last_Name, Department
+from   Instructors;
+go
+
+-- you can change the order of the fields anyway you want
+-- remember white space can be used freely to improve readability
+select Last_Name, Department, Instructor_ID, First_Name
+from   Instructors;
+go
+
+-- select "star" gets all the fields from data dictionary
+select * from Students;
+
+-- order by clause
+select		* 
+from		Students 
+order by	Last_Name;
+
+-- order by desc clause
+select		* 
+from		Students 
+order by	Last_Name desc;
+
+-- multiple fields in order by
+-- note, null sorts lower than any nonnull fields
+select		*
+from		Students
+order by	Last_Name, Department_Major desc;
+
+-- where clause
+select		*
+from		Students
+where		Department_Major = 'Computer Science'
+order by	Last_Name;
+
+-- Boolean logic in where clause
+select		*
+from		Students
+where		(Department_Major = 'Computer Science'
+or			 Department_Minor is null)
+and			Last_Name = 'Smith';
+
+-- simple join clause with aliases
+select		a.First_Name + ' ' + a.Last_Name as Name, b.Enrollment_Status, c.Title 
+from		Students a, Student_Courses b, Courses c
+where		a.Student_ID = b.Student_ID
+and			b.Course_ID = c.Course_ID
+order by	Name;
+
+-- select distinct
+select		distinct a.First_Name + ' ' + a.Last_Name as Name
+from		Students a, Student_Courses b, Courses c
+where		a.Student_ID = b.Student_ID
+and			b.Course_ID = c.Course_ID
+order by	Name;
+
+-- correlated subquery
+select		distinct a.First_Name + ' ' + a.Last_Name as Name
+from		Students a, Student_Courses b, Courses c
+where		a.Student_ID = b.Student_ID
+and			b.Course_ID in
+			(select Course_ID
+			 from	Courses c
+			 where	b.Course_ID = c.Course_ID)
+order by	Name;
+
+-- self join
+select	distinct a.Department, a.First_Name + ' ' + a.Last_Name as Name
+from	Instructors a, Instructors b
+where	a.Instructor_ID	= b.Department_Head
+and		b.Department_Head is not null
+order by a.Department, Name;
+
+-- update
+update 	Instructors
+set	Last_Name = 'Is the Man'
+where	First_Name = 'Rick';
+
+-- update multiple fields
+update 	Instructors
+set	Last_Name = 'Is the Man',
+	Department = 'Chemistry'
+where	First_Name = 'Rick';
+
+-- don't use this syntax on real data
+delete from Students where First_Name = 'Joe';
