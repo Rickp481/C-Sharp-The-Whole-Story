@@ -1,0 +1,355 @@
+use model;
+go
+
+create table Customers
+(
+	Customer_ID			int,
+	Name				varchar(50) not null,
+	Email				varchar(50) not null,
+	Phone				varchar(15) not null,
+	Credit_Status			int default -1,
+	Delete_Status			bit not null default 0,  -- 0 infers not deleted, 1 = deleted
+	primary key (Customer_ID)
+);
+go
+
+create table Order_Statuses
+(
+	Order_Status			varchar(25) primary key,
+	Delete_Status			bit not null default 0,  -- 0 infers not deleted, 1 = deleted
+);
+go
+
+create table Orders
+(
+	Order_ID			int primary key,
+	Order_Status			varchar(25) not null,
+	Order_Date			DateTime default GETDATE(),
+	Due_Date			DateTime,
+	Customer_ID			int not null,
+	Delete_Status			bit not null default 0,  -- 0 infers not deleted, 1 = deleted
+	constraint Orders_fk0 foreign key (Order_Status) references Order_Statuses(Order_Status),
+	constraint Orders_fk1 foreign key (Customer_ID) references Customers(Customer_ID)
+);
+go
+
+create table Products
+(
+	Product_ID			int primary key,
+	SKU				varchar(15),
+	Name				varchar(50) not null,
+	Price				decimal(8,2),
+	Delete_Status			bit not null default 0,  -- 0 infers not deleted, 1 = deleted
+);
+go
+
+create table Line_Items
+(
+	Order_ID			int,
+	Line_Item_Number		int,
+	Product_ID			int not null,
+	Quantity			int not null,
+	Extended_Price			decimal(8,2) not null,
+	Delete_Status			bit not null default 0,  -- 0 infers not deleted, 1 = deleted
+	constraint Line_Items_pk primary key (Order_ID, Line_Item_Number),
+	constraint Line_Items_fk0 foreign key (Product_ID) references Products(Product_ID)
+);
+go
+
+insert into Products(Product_ID, SKU, Name, Price, Delete_Status)
+values (1, 'B4598', 'Big Bob''s Hot Sauce', 45.25, 0);
+insert into Products(Product_ID, SKU, Name, Price, Delete_Status)
+values (2, 'F9458', 'Flowers for Mary', 50.00, 0);
+insert into Products(Product_ID, SKU, Name, Price, Delete_Status)
+values (3, 'B98', 'A New Book by Rick', 69, 0);
+insert into Products(Product_ID, SKU, Name, Price, Delete_Status)
+values (4, 'B4598_v2', 'Big Bob''s Hot Sauce V2', 45.25, 0);
+insert into Products(Product_ID, SKU, Name, Price, Delete_Status)
+values (5, 'G6532', 'Gus''s Breakfast Treats', 4.25, 0);
+go
+
+insert into Order_Statuses (Order_Status, Delete_Status)
+values ('New',0);
+insert into Order_Statuses (Order_Status, Delete_Status)
+values ('WIP',0);
+insert into Order_Statuses (Order_Status, Delete_Status)
+values ('Ready to Ship',0);
+insert into Order_Statuses (Order_Status, Delete_Status)
+values ('Closed',0);
+insert into Order_Statuses (Order_Status, Delete_Status)
+values ('Returned for Refund',0);
+go
+
+insert into Customers (Customer_ID, Name, Email, Phone, Credit_Status, Delete_Status)
+values (1,'The Bar Next Door','someemail123@gmail.com','1 9198101234',1000,0);
+insert into Customers (Customer_ID, Name, Email, Phone, Credit_Status, Delete_Status)
+values (2,'Car Dealership','someemai1313@gmail.com','1 3218101234',1000,0);
+insert into Customers (Customer_ID, Name, Email, Phone, Credit_Status, Delete_Status)
+values (3,'Baseball Hall of Fame','email123@gmail.com','1 4568101234',1000,0);
+insert into Customers (Customer_ID, Name, Email, Phone, Credit_Status, Delete_Status)
+values (4,'Second Base','someemail789@gmail.com','1 4568101234',1000,0);
+insert into Customers (Customer_ID, Name, Email, Phone, Credit_Status, Delete_Status)
+values (5,'Hat Off To You','somee123@gmail.com','1 9878101234',1000,0);
+go
+
+insert into Orders (Order_ID, Order_Status, Order_Date, Due_Date, Customer_ID, Delete_Status)
+values (1,'New', '20250428','20250528',1,0);
+insert into Orders (Order_ID, Order_Status, Order_Date, Due_Date, Customer_ID, Delete_Status)
+values (2,'Ready to Ship', '20250401','20250501',2,0);
+insert into Orders (Order_ID, Order_Status, Order_Date, Due_Date, Customer_ID, Delete_Status)
+values (3,'Returned for Refund', '20250528','20250628',3,0);
+insert into Orders (Order_ID, Order_Status, Order_Date, Due_Date, Customer_ID, Delete_Status)
+values (4,'WIP', '20250428','20250528',1,0);
+go
+
+insert into Line_Items (Order_ID, Line_Item_Number, Product_ID, Quantity, Extended_Price, Delete_Status)
+values (1,1,1,10,1500.50,0);
+insert into Line_Items (Order_ID, Line_Item_Number, Product_ID, Quantity, Extended_Price, Delete_Status)
+values (1,2,3,5,1500.50,0);
+insert into Line_Items (Order_ID, Line_Item_Number, Product_ID, Quantity, Extended_Price, Delete_Status)
+values (1,3,2,10,1500.50,0);
+insert into Line_Items (Order_ID, Line_Item_Number, Product_ID, Quantity, Extended_Price, Delete_Status)
+values (2,1,1,10,1500.50,0);
+go
+
+
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Collections;
+
+namespace chapter_21_parent_child_grids
+{
+    public partial class Form1 : Form
+    {
+        DataTable tblCustomers, tblOrders, tblLineItems, tblProducts;
+        DataSet tblDataSet;
+        DataGridView customersGrid, ordersGrid, lineitemsGrid;
+        DataTable tblCustomerDels, tblOrdersDels, tblLineItemDels;
+        SqlCommand myCommand;
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.Size = new System.Drawing.Size(1200, 800);
+            this.Text = "Customer Service";
+
+            DataGridView CustomersGrid = new DataGridView();
+            CustomersGrid.Name = "customersGridView";
+            CustomersGrid.BorderStyle = BorderStyle.FixedSingle;
+            CustomersGrid.Location = new System.Drawing.Point(25, 25);
+            CustomersGrid.Size = new System.Drawing.Size(550, 250);
+            this.Controls.Add(CustomersGrid);
+
+            DataGridView OrdersGrid = new DataGridView();
+            OrdersGrid.Name = "ordersGridView";
+            OrdersGrid.BorderStyle = BorderStyle.FixedSingle;
+            OrdersGrid.Location = new Point(650, 25);
+            OrdersGrid.Size = new System.Drawing.Size(500, 250);
+            this.Controls.Add(OrdersGrid);
+
+            DataGridView lineitemsGrid = new DataGridView();
+            lineitemsGrid.Name = "lineitemsGridView";
+            lineitemsGrid.BorderStyle = BorderStyle.FixedSingle;
+            lineitemsGrid.Location = new Point(25, 300);
+            lineitemsGrid.Size = new System.Drawing.Size(1125, 350);
+            this.Controls.Add(lineitemsGrid);
+
+            Button submitButton = new Button();
+            submitButton.Location = new System.Drawing.Point(550, 700);
+            submitButton.BackColor = System.Drawing.Color.Red;
+            submitButton.ForeColor = System.Drawing.Color.White;
+            submitButton.Text = "Submit";
+            submitButton.Size = new System.Drawing.Size(100, 30);
+            this.Controls.Add(submitButton);
+
+            SqlConnection conn = new SqlConnection(@"Data Source = localhost\SQLEXPRESS; Initial Catalog = model;
+                                                    Integrated Security = True; TrustServerCertificate = True;");
+            SqlDataAdapter myDA1 = new SqlDataAdapter("select Customer_ID, Name, Email, Phone, Credit_Status from Customers order by Customer_ID", conn);
+            tblCustomers = new DataTable("tblCustomers");
+            myDA1.Fill(tblCustomers);
+
+            SqlDataAdapter myDA2 = new SqlDataAdapter("select Order_ID, Order_Status, Order_Date, Due_Date from Orders order by Order_ID", conn);
+            tblOrders = new DataTable("tblOrders");
+            myDA2.Fill(tblOrders);
+
+            SqlDataAdapter myDA3 = new SqlDataAdapter("select a.order_id, a.line_item_number, a.product_id, b.name, a.quantity, a.extended_price " +
+                                                      "from line_items a, products b " +
+                                                      "where a.product_id = b.product_id " +
+                                                      "order by a.order_id, a.line_item_number ", conn);
+            tblLineItems = new DataTable("tblLineItems");
+            myDA3.Fill(tblLineItems);
+
+            tblDataSet = new DataSet();
+
+            // load the Tables collection
+            tblDataSet.Tables.Add(tblCustomers);
+            tblDataSet.Tables.Add(tblOrders);
+            tblDataSet.Tables.Add(tblLineItems);
+
+            // load the Relations collection
+            tblDataSet.Relations.Add("Cust_Ord_Relation", tblCustomers.Columns["customer_id"], tblOrders.Columns["customer_id"]);
+            tblDataSet.Relations.Add("Ord_Line_Relation", tblOrders.Columns["order_id"], tblLineItems.Columns["order_id"]);
+
+            //create BindingSources to chain down our relationships
+            BindingSource bsCust = new BindingSource();
+            bsCust.DataSource = tblDataSet; // set the source to the entire dataset
+            bsCust.DataMember = "tblCustomers"; // top parent
+
+            BindingSource bsOrders = new BindingSource();
+            bsOrders.DataSource = bsCust;
+            bsOrders.DataMember = "Cust_Ord_Relation";  // follow down the relationship to the child
+
+            BindingSource bsLine = new BindingSource();
+            bsLine.DataSource = bsOrders;
+            bsLine.DataMember = "Ord_Line_Relation";  // follow down the relationship to the child
+
+            // now set the datasource of each grid to the corresponding bindingsource
+            CustomersGrid.DataSource = bsCust;
+            OrdersGrid.DataSource = bsOrders;
+            lineitemsGrid.DataSource = bsLine;
+
+            // add a column to the lineitems grid
+            lineitemsGrid.Columns.Add("Product Name", "Product");
+
+            SelectionChanged();
+        }
+
+        private void customersGrid_Selection_Changed(object sender, EventArgs e)
+        {
+            SelectionChanged();
+        }
+
+        private void ordersGrid_Selection_Changed(object sender, EventArgs e)
+        {
+            SelectionChanged();
+        }
+
+        private void SelectionChanged()
+        {
+            SqlConnection conn2 = new SqlConnection(@"Data Source = localhost\SQLEXPRESS; Initial Catalog = model;
+                                                    Integrated Security = True; TrustServerCertificate = True;");
+
+            SqlDataAdapter myDA4 = new SqlDataAdapter("select product_id, name from products order by product_id", conn2);
+            tblProducts = new DataTable("tblProducts");
+            myDA4.Fill(tblProducts);
+
+            // DropDown wants an Array as its DataSource
+            ArrayList StringList = new ArrayList();
+
+            // populate the ArrayList from tblProducts
+            foreach (DataRow row in tblProducts.Rows) StringList.Add(row["name"].ToString);
+
+            // now add a DropDown to that new lineitems grid column
+            for (int i = 0; i < lineitemsGrid.Rows.Count - 1; i++)
+            {
+                var myCell = new DataGridViewComboBoxCell(); // create an instance of the DropDown
+                myCell.DataSource = StringList;
+                lineitemsGrid.Rows[i].Cells[6] = myCell;
+            }
+
+            for (int i = 0; i < lineitemsGrid.Rows.Count - 1; i++)
+            {
+                for (int j = 0; j < StringList.Count; j++)
+                {
+                    if (StringList[j].ToString() == lineitemsGrid.Rows[i].Cells[6].ToString()) // found a match
+                        lineitemsGrid.Rows[i].Cells[6].Value = StringList[j];
+                }
+            }
+        }
+
+        private void lineitemsGrid_UserAddedRow(object sender, DataGridViewRowEventArgs e)
+        {
+
+            SqlConnection conn3 = new SqlConnection(@"Data Source = localhost\SQLEXPRESS; Initial Catalog = model;
+                                                    Integrated Security = True; TrustServerCertificate = True;");
+
+            SqlDataAdapter myDA5 = new SqlDataAdapter("select product_id, name from products order by product_id", conn3);
+            tblProducts = new DataTable("tblProducts");
+            myDA5.Fill(tblProducts);
+
+            // DropDown wants an Array as its DataSource
+            ArrayList StringList = new ArrayList();
+
+            // populate the ArrayList from tblProducts
+            foreach (DataRow row in tblProducts.Rows) StringList.Add(row["name"].ToString);
+
+            var myCell = new DataGridViewComboBoxCell(); // create an instance of the DropDown
+            myCell.DataSource = StringList;
+
+            // remember we have already added a row so our index is count-2
+            int myRowIndex = lineitemsGrid.Rows.Count - 2;
+            lineitemsGrid.Rows[myRowIndex].Cells[6] = myCell;
+        }
+
+        private void combo_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selected = (sender as ComboBox).SelectedItem.ToString();
+            lineitemsGrid.CurrentRow.Cells[6].Value = selected;
+
+            foreach (DataRow myRow in tblProducts.Rows)
+            {
+                if (lineitemsGrid.CurrentRow.Cells["name"].Value == myRow["name"].ToString())
+                    lineitemsGrid.CurrentRow.Cells["product_id"].Value = myRow["product_id"].ToString();
+            }
+        }
+
+        private void customersGrid_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
+        {
+            if (ordersGrid.Rows.Count == 1)  // because there will be one order row for insert
+                tblCustomerDels.Rows.Add(customersGrid.CurrentRow.Cells["customer_id"].Value);
+            else
+            {
+                MessageBox.Show("You may not delete a customer with orders. Please delete order(s) first.");
+                e.Cancel = true;
+            }
+        }
+
+        private void ordersGrid_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
+        {
+            if (lineitemsGrid.Rows.Count == 1)
+                tblOrdersDels.Rows.Add(ordersGrid.CurrentRow.Cells["customer_id"].Value,
+                                        ordersGrid.CurrentRow.Cells["order_id"].Value);
+            else
+            {
+                MessageBox.Show("You may not delete an order with lineitems. Please delete lineitem(s) first.");
+                e.Cancel = true;
+
+            }
+        }
+
+        private void lineitemsGrid_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
+        {
+            tblLineItemDels.Rows.Add(lineitemsGrid.CurrentRow.Cells["order_id"].Value,
+                                        lineitemsGrid.CurrentRow.Cells["line_item_number"].Value);
+        }
+
+        private void submitButton_Click(object sender, EventArgs e)
+        {
+            SqlConnection conn4 = new SqlConnection(@"Data Source = localhost\SQLEXPRESS; Initial Catalog = model;
+                                                    Integrated Security = True; TrustServerCertificate = True;");
+
+            myCommand = new SqlCommand("insert into customers (customer_id, name, email, phone, credit_status) " +
+                                        "values (isnull(max(customer_id)+1,1),@name,@email,@phone,@credit_status)");
+
+            foreach (DataRow myRow in tblCustomers.Rows)
+            {
+                if (myRow.RowState == DataRowState.Added)  // row added
+                {
+                    myCommand.Parameters.AddWithValue("@name", myRow["name"]); // variable substitution
+                    myCommand.Parameters.AddWithValue("@email", myRow["email"]);
+                    myCommand.Parameters.AddWithValue("@phone", myRow["phone"]);
+                    myCommand.Parameters.AddWithValue("@credit_status", myRow["credit_status"]);
+
+                    myCommand.ExecuteNonQuery();   // execute 
+                    myCommand.Parameters.Clear();
+                }
+            }
+
+            MessageBox.Show("Updates were successfully written to the database.");
+        }
+
+    }
+}
