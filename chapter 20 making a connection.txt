@@ -1,0 +1,44 @@
+using Microsoft.Data.SqlClient;
+using System.Data;
+
+namespace DB_Connection
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.Text = "DB Connection Example";
+            this.Size = new System.Drawing.Size(900, 750);
+
+            // add a DataGrid object
+            DataGridView dg = new DataGridView();
+            dg.Size = new System.Drawing.Size(800, 650);
+            dg.Location = new System.Drawing.Point(50, 50);
+            dg.BorderStyle = BorderStyle.Fixed3D;
+            dg.Visible = true;
+            this.Controls.Add(dg);
+
+            // now set up a connection to my local copy of SQL Server
+            SqlConnection conn = new SqlConnection(@"Data Source=localhost\SQLEXPRESS; Initial Catalog=model; 
+                                                    Integrated Security=True; TrustServerCertificate=True;");
+
+            // now we need a pipe over which to stream data on our connection
+            SqlDataAdapter mDA = new SqlDataAdapter("select Textbook_ID, Title, Publisher from Textbooks order by Title", conn);
+
+            // now we need a mechanism to store the data, DataTable
+            DataTable myDT = new DataTable();
+
+            // time to fill the DataTable
+            mDA.Fill(myDT);
+
+            // finish by setting the DataSource property of our DataGridView to our DataTable
+            dg.DataSource = myDT;
+
+        }
+    }
+}
