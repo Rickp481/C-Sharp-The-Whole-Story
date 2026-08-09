@@ -1,0 +1,412 @@
+use model;
+go
+
+create procedure readCustomers
+	@cust_id int
+as
+begin
+
+	if @cust_id < 0
+	begin
+		select * from customers order by Customer_ID;
+	end;
+	else
+	begin
+		select * from customers where Customer_ID = @cust_id;
+	end;
+end;
+go
+
+create procedure readProducts
+	@prod_id int
+as
+begin
+
+	if @prod_id < 0
+	begin
+		select * from products order by Product_ID;
+	end;
+	else
+	begin
+		select * from products where product_ID = @prod_id;
+	end;
+end;
+go
+
+create procedure readOrderStatuses
+	@order_status varchar = ''
+as
+begin
+
+	if @order_status = ''
+	begin
+		select * from Order_Statuses order by Order_Status;
+	end;
+	else
+	begin
+		select * from Order_Statuses where Order_Status = @order_status;
+	end;
+end;
+go
+
+create procedure readOrders
+	@cust_id	int,
+	@ord_id		int
+as
+begin
+		if @cust_id < 0 and @ord_id < 0
+		begin
+			select	*
+			from	orders;
+		end;
+		else if @cust_id > 0 and @ord_id < 0
+		begin
+			select	*
+			from	orders
+			where	Customer_ID = @cust_id;
+		end;
+		else if @cust_id < 0 and @ord_id > 0
+		begin
+			select	*
+			from	orders
+			where	Order_ID = @ord_id;
+		end;
+		else
+		begin
+			select	*
+			from	orders
+			where	Order_ID = @ord_id
+			and		Customer_ID = @cust_id;
+		end;
+
+end;
+
+create procedure readLineItems
+	@ord_id		int
+as
+begin
+	if @ord_id < 0 
+	begin
+		select	order_id, line_item_number, a.product_id, quantity,
+				extended_price, b.name
+		from	Line_Items a, products b
+		where	a.Product_ID = b.Product_ID;
+	end;
+	else
+	begin
+		select	order_id, line_item_number, a.product_id, quantity,
+				extended_price, b.name
+		from	Line_Items a, products b
+		where	a.Product_ID = b.Product_ID
+		and		a.Order_ID = @ord_id;
+	end;
+end;
+
+create procedure updateCustomers
+	@customer_id		int,
+	@name				varchar,
+	@email				varchar,
+	@phone				varchar,
+	@credit_status		int = null,
+	@update_type		int, -- 1=insert, 2=update, 3=delete
+	@new_id				int output -- new ID if insert, negative if invalid
+as
+begin
+	declare @row_count int;
+
+	if @update_type = 1 -- insert
+	begin
+		select	@new_id = isnull(max(customer_id)+1,1)
+		from	customers;
+
+		insert into customers
+			(customer_id, name, email, phone, credit_status, Delete_Status)
+		values
+			(@new_id, @name, @email, @phone, @credit_status, 0);
+	end;
+	else if @update_type = 2 -- update
+	begin
+		select	@row_count = count(*)
+		from	customers
+		where	Customer_ID = @customer_id
+		and		delete_status = 1;
+
+		if @row_count > 0
+			select @new_id = -1; -- cannot update a deleted row
+		else
+		begin
+			select @new_id = @customer_id;
+	
+			update	customers
+			set		name = @name,
+					email = @email,
+					phone = @phone,
+					Credit_Status = @credit_status
+			where	Customer_ID = @customer_id;
+		end;
+	end;
+	else -- delete
+	begin
+		select	@row_count = count(*)
+		from	orders
+		where	Customer_ID = @customer_id;
+
+		if @row_count > 0 -- RI problem
+			select @new_id = -1;
+		else
+		begin
+			update	customers
+			set		Delete_Status = 1
+			where	Customer_ID = @customer_id;
+		end;
+	end;
+end;
+
+create procedure updateOrders
+	@order_id		int,
+	@order_status	varchar,
+	@customer_id	int,
+	@update_type	int, -- 1=insert, 2=update, 3=delete
+	@new_id			int output -- new ID if insert, negative if invalid
+as
+begin
+	declare @row_count int;
+	declare @duedate datetime;
+
+	if @update_type = 1 -- insert
+	begin
+		select @new_id = isnull(max(order_id)+1,1)
+		from	Orders;
+
+		select @duedate = DATEADD(dd, 30, getdate());
+		insert into Orders
+			(order_id, order_status, Order_Date, Due_Date, Customer_ID, Delete_Status)
+		values
+			(@new_id, @order_status, GETDATE(), @duedate, @customer_id, 0);
+	end;
+	else if @update_type = 2 -- update
+	begin
+		select	@row_count = count(*)
+		from	Line_Items
+		where	Order_ID = @order_id;
+
+		if @row_count > 0
+			select @new_id = -1; -- cannot do the update, brake RI
+		else
+		begin
+			select	@new_id = @order_id;
+			update	orders	
+			set		Order_Status = @order_status,
+					Customer_ID = @customer_id
+			where	Order_ID = @order_id;
+		end;
+	end;
+	else -- delete
+	begin
+		select	@row_count = count(*)
+		from	Line_Items
+		where	Order_ID = @order_id;
+
+		if @row_count > 0
+			select @new_id = -1; -- cannot do the update, brake RI
+		else
+		begin
+			update	orders
+			set		Order_Status = @order_status,
+					customer_id = @customer_id
+			where	Order_ID = @order_id;
+		end;
+	end;
+end;
+
+create procedure updateLineItems
+	@Order_id		int,
+	@Line_Item_Number	int,
+	@product_id		int,
+	@quantity		int,
+	@extended_price	decimal,
+	@update_type	int, -- 1=insert, 2=update, 3=delete
+	@new_id			int output -- new ID if insert, negative if invalid
+as
+begin
+	if @update_type = 1 -- insert
+	begin
+		select @new_id = isnull(max(line_item_number)+1,1)
+		from	Line_Items
+		where	Order_ID = @Order_id;
+
+		insert into Line_Items
+			(Order_ID, Line_Item_Number, Product_ID, Quantity, Extended_Price, Delete_Status)
+		values
+			(@Order_id, @new_id, @product_id, @quantity, @extended_price, 0);
+	end;
+	else if @update_type = 2 -- update
+	begin
+		update	Line_Items
+		set		Product_ID = @product_id,
+				Quantity = @quantity,
+				Extended_Price = @extended_price
+		where	Order_ID = @Order_id
+		and		Line_Item_Number = @Line_Item_Number;
+	end;
+	else -- delete
+	begin
+		update	Line_Items
+		set		Delete_Status = 1
+		where	Order_ID = @Order_id
+		and		Line_Item_Number = @Line_Item_Number;
+	end;
+end;
+
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Collections;
+
+namespace chapter_22_stored_procedures
+{
+    public partial class Form1 : Form
+
+    {
+        DataTable tblCustomers, tblOrders, tblLineItems;
+        DataTable tblProducts, tblCustomersDels, tblOrdersDels, tblLineItemsDels;
+        SqlCommand myCommand;
+        SqlDataAdapter myDA;
+        DataSet tblDataSet;
+        BindingSource bsCust, bsOrd, bsLine;
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            tblCustomers = new DataTable("tblCustomers");
+            tblOrders = new DataTable("tblOrders");
+            tblLineItems = new DataTable("tblLineItems");
+            tblProducts = new DataTable("tblProducts");
+            tblCustomersDels = new DataTable("tblCustomersDels");
+            tblOrdersDels = new DataTable("tblOrdersDels");
+            tblLineItemsDels = new DataTable("tblLineItemsDels");
+
+            tblCustomersDels.Columns.Add("customer_id");
+            tblOrdersDels.Columns.Add("customer_id");
+            tblOrdersDels.Columns.Add("order_id");
+            tblLineItemsDels.Columns.Add("order_id");
+            tblLineItemsDels.Columns.Add("line_item_number");
+
+            this.Size = new System.Drawing.Size(1200, 800);
+            this.Text = "Customer Service";
+
+            DataGridView customersGridView = new DataGridView();
+            customersGridView.Name = "customersGridView";
+            customersGridView.BorderStyle = BorderStyle.FixedSingle;
+            customersGridView.Location = new System.Drawing.Point(25, 25);
+            customersGridView.Size = new System.Drawing.Size(550, 250);
+            this.Controls.Add(customersGridView);
+
+            DataGridView ordersGridView = new DataGridView();
+            ordersGridView.Name = "ordersGridView";
+            ordersGridView.BorderStyle = BorderStyle.FixedSingle;
+            ordersGridView.Location = new Point(650, 25);
+            ordersGridView.Size = new System.Drawing.Size(500, 250);
+            this.Controls.Add(ordersGridView);
+
+            DataGridView lineitemsGridView = new DataGridView();
+            lineitemsGridView.Name = "lineitemsGridView";
+            lineitemsGridView.BorderStyle = BorderStyle.FixedSingle;
+            lineitemsGridView.Location = new Point(25, 300);
+            lineitemsGridView.Size = new System.Drawing.Size(1125, 350);
+            this.Controls.Add(lineitemsGridView);
+
+            Button submitButton = new Button();
+            submitButton.Name = "submitButton";
+            submitButton.BackColor = System.Drawing.Color.Red;
+            submitButton.Location = new System.Drawing.Point(450, 675);
+            submitButton.Size = new System.Drawing.Size(250, 50);
+            submitButton.Text = "Submit";
+            submitButton.Click += SubmitButton_Click;
+            this.Controls.Add(submitButton);
+
+            SqlConnection conn = new SqlConnection(@"Data Source=localhost\SQLEXPRESS; Initial Catalog = model; 
+                                                    Integrated Security = True; TrustServerCertificate = True;");
+            conn.Open();
+
+            myCommand = new SqlCommand("readCustomers", conn);
+            myCommand.CommandType = CommandType.StoredProcedure;
+            myCommand.Parameters.AddWithValue("cust_id", -1);  // read all the customer rows
+            myDA = new SqlDataAdapter(myCommand);
+            myDA.Fill(tblCustomers);
+
+            myCommand = new SqlCommand("readOrders", conn);
+            myCommand.CommandType = CommandType.StoredProcedure;
+            myCommand.Parameters.AddWithValue("cust_id", -1);
+            myCommand.Parameters.AddWithValue("ord_id", -1);
+            myDA = new SqlDataAdapter(myCommand);
+            myDA.Fill(tblOrders);
+
+            myCommand = new SqlCommand("readLineItems", conn);
+            myCommand.CommandType = CommandType.StoredProcedure;
+            myCommand.Parameters.AddWithValue("ord_id", -1);
+            myDA = new SqlDataAdapter(myCommand);
+            myDA.Fill(tblLineItems);
+
+            tblDataSet = new DataSet();
+            tblDataSet.Tables.Add(tblCustomers);
+            tblDataSet.Tables.Add(tblOrders);
+            tblDataSet.Tables.Add(tblLineItems);
+
+            tblDataSet.Relations.Add("Cust_Ord_Relation", tblCustomers.Columns["customer_id"], tblOrders.Columns["customer_id"]);
+            tblDataSet.Relations.Add("Ord_Line_Relation", tblOrders.Columns["order_id"], tblLineItems.Columns["order_id"]);
+
+            BindingSource bsCust = new BindingSource();
+            bsCust.DataSource = tblDataSet;
+            bsCust.DataMember = "tblCustomers";
+            BindingSource bsOrd = new BindingSource();  
+            bsOrd.DataSource = bsCust;
+            bsOrd.DataMember = "Cust_Ord_Relation";
+            BindingSource bsLine = new BindingSource();
+            bsLine.DataSource = bsOrd;
+            bsLine.DataMember = "Ord_Line_Relation";
+
+            customersGridView.DataSource = bsCust;
+            ordersGridView.DataSource = bsOrd;
+            lineitemsGridView.DataSource = bsLine;
+        }
+
+        private void SubmitButton_Click(object sender, EventArgs e)
+        {
+
+            SqlConnection conn = new SqlConnection(@"Data Source=localhost\SQLEXPRESS; Initial Catalog = model; 
+                                                    Integrated Security = True; TrustServerCertificate = True;");
+            conn.Open();
+
+            myCommand = new SqlCommand("updateCustomers", conn);
+            myCommand.CommandType = CommandType.StoredProcedure;
+
+            foreach (DataRow myRow in tblCustomers.Rows)
+            {
+                // we will do inserts first
+                if (myRow.RowState == DataRowState.Added)
+                {
+                    myCommand.Parameters.AddWithValue("@customer_id", 0); // new customer_id will come back in @new_id
+                    myCommand.Parameters.AddWithValue("@name", myRow["name"]);
+                    myCommand.Parameters.AddWithValue("@email", myRow["email"]);
+                    myCommand.Parameters.AddWithValue("@phone", myRow["phone"]);
+                    myCommand.Parameters.AddWithValue("@credit_status", myRow["credit_status"]);
+                    myCommand.Parameters.AddWithValue("@update_type", 1);
+                    myCommand.Parameters.Add("@new_id", SqlDbType.Int).Direction = ParameterDirection.Output;
+
+                    myCommand.ExecuteNonQuery();
+                    
+                    if (myCommand.Parameters["@new_id"].Value.ToString() == "-1") // something went wrong
+                        MessageBox.Show("Customer " + myRow["name"] + " failed to insert, please check the data.");
+                    else
+                        myRow["customer_id"] = (int)myCommand.Parameters["@new_id"].Value;
+
+                    myCommand.Parameters.Clear();
+                }
+            }
+        }
+    }
+}
+
