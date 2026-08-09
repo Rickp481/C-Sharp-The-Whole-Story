@@ -1,0 +1,107 @@
+using System.Data;
+using System.Xml;
+
+namespace Chapter_23_XML
+{
+    public partial class Form1 : Form
+    {
+        DataGridView dgv1 = new DataGridView();
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.Size = new Size(1000, 500);
+            dgv1.Location = new Point(50, 50);
+            dgv1.Size = new Size(600,200);
+            this.Controls.Add(dgv1);
+
+            Button submitButton = new Button();
+            submitButton.Text = "Submit";
+            submitButton.Location = new Point(800, 250);
+            submitButton.Size = new Size(100, 30);
+            submitButton.Click += SubmitButton_Click;
+            this.Controls.Add(submitButton);
+
+            // too rudamentary, let's play with better toys
+            /*
+            DataSet myDS = new DataSet();
+            myDS.ReadXml(@"E:\documents\C# The Whole Story\Section 4 More Data Please\Chapter 23 XML\products.xml");
+            dgv1.DataSource = myDS.Tables[0];
+            */
+
+            dgv1.Columns.Add("product_id", "Product ID");
+            dgv1.Columns.Add("product_desc", "Product Desc");
+            dgv1.Columns.Add("product_name", "Product Name");
+            dgv1.Columns.Add("quantity_on_hand", "QOH");
+            dgv1.Columns.Add("product_length", "Length");
+            dgv1.Columns.Add("product_width", "Width");
+
+            // read the XML file into myDoc
+            XmlDocument myDoc = new XmlDocument();
+            myDoc.Load(@"E:\documents\C# The Whole Story\Section 4 More Data Please\Chapter 23 XML\products.xml");
+
+            // create an array of nodes of tag name product
+            XmlNodeList elemList = myDoc.GetElementsByTagName("product");
+
+            foreach (XmlNode elem in elemList)
+            {
+                int myIndex = dgv1.Rows.Add();
+                dgv1.Rows[myIndex].Cells[0].Value = elem.Attributes["id"].Value.ToString();
+                dgv1.Rows[myIndex].Cells[1].Value = elem["product_desc"].InnerText.ToString();
+                dgv1.Rows[myIndex].Cells[2].Value = elem["product_name"].InnerText.ToString();
+                dgv1.Rows[myIndex].Cells[3].Value = elem["quantity_on_hand"].InnerText.ToString();
+                dgv1.Rows[myIndex].Cells[4].Value = elem["product_length"].InnerText.ToString();
+                dgv1.Rows[myIndex].Cells[5].Value = elem["product_width"].InnerText.ToString();
+            }
+        }
+
+        private void SubmitButton_Click(object? sender, EventArgs e)
+        {
+            XmlDocument myDoc = new XmlDocument();
+            XmlNode myRoot = myDoc.CreateElement("products");
+            myDoc.AppendChild(myRoot);
+
+            foreach (DataGridViewRow myRow in dgv1.Rows)
+            {
+                if (myRow.Cells[0].Value != null)  // this is needed for the * row
+                {
+                    // create a new product tag w/ id attribute
+                    XmlNode myProduct = myDoc.CreateElement("product");
+                    XmlAttribute myAttribute = myDoc.CreateAttribute("id");
+                    myAttribute.Value = myRow.Cells[0].Value.ToString();
+                    myProduct.Attributes.Append(myAttribute);
+                    myRoot.AppendChild(myProduct);
+
+                    // create child elements
+                    XmlElement desc = myDoc.CreateElement("product_desc");
+                    desc.InnerText = myRow.Cells[1].Value.ToString();
+                    myProduct.AppendChild(desc);
+
+                    XmlElement name = myDoc.CreateElement("product_name");
+                    name.InnerText = myRow.Cells[2].Value.ToString();
+                    myProduct.AppendChild(name);
+
+                    XmlElement qoh = myDoc.CreateElement("quantity_on_hand");
+                    qoh.InnerText = myRow.Cells[3].Value.ToString();
+                    myProduct.AppendChild(qoh);
+
+                    XmlElement length = myDoc.CreateElement("product_length");
+                    length.InnerText = myRow.Cells[4].Value.ToString();
+                    myProduct.AppendChild(length);
+
+                    XmlElement width = myDoc.CreateElement("product_width");
+                    width.InnerText = myRow.Cells[5].Value.ToString();
+                    myProduct.AppendChild(width);
+                }
+            }
+
+            File.Delete(@"E:\documents\C# The Whole Story\Section 4 More Data Please\Chapter 23 XML\products.xml");
+            myDoc.Save(@"E:\documents\C# The Whole Story\Section 4 More Data Please\Chapter 23 XML\products.xml");
+
+            MessageBox.Show("DataGrid contents have been saved to external XML File.");
+        }
+    }
+}
