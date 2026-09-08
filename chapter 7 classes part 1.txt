@@ -1,20 +1,14 @@
-using System.ComponentModel.DataAnnotations;
-
 class Cube
 {
     private double l, w, h;
 
-    public void setLength(double length)
-    { l = length; }
+    public void setLength(double length) { this.l = length; }
 
-    public void setWidth(double width)
-    { w = width; }
+    public void setWidth(double width) { this.w = width; }
 
-    public void setHeight(double height)
-    { h = height; }
+    public void setHeight(double height) { this.h = height; }
 
-    public double getVolume()
-        { return l * w * h; }
+    public double getVolume() { return l * w * h; }
 }
 
 class Person
@@ -23,18 +17,11 @@ class Person
     private int a;
     private double w, h;
 
-    public Person
-        (
-            string firstname,   // parameterized constructor
-            string lastname,    // note the parentheses to delimit parameter list
-            string gender,
-            int age,
-            double weight,
-            double height
-        )
+    public Person(string firstname, string lastname, string gender,
+                    int age, double weight, double height)
     {
-        Console.WriteLine("Person object is being created in memory");  // normally not included
-        fn = firstname; // assign input parms to local private vars
+        Console.WriteLine("Person object is being created in memory"); // normally not included here
+        fn = firstname;
         ln = lastname;
         g = gender;
         a = age;
@@ -43,34 +30,27 @@ class Person
     }
 
     public string getFirstName() { return fn; }
-
     public string getLastName() { return ln; }
-
     public string getGender() { return g; }
-
     public int getAge() { return a; }
-
+    public double getWeight() { return w; }
     public double getHeight() { return h; }
-
-    public double getWidth() { return w; }
 
     private bool isAFatty()
     {
-        if (w / h > 2.25)     // encapsulate this logic
-            return true;
-        else
-            return false;
+        if (w / h > 2.25) return true;
+        else return false;
     }
 
     public bool failsBMI()
     { return isAFatty(); }
 
 }
+
 class Program
 {
     static void Main(string[] args)
     {
-        /*
         Cube cube1 = new Cube();
         Cube cube2 = new Cube();
 
@@ -82,34 +62,25 @@ class Program
         cube2.setWidth(5.5);
         cube2.setLength(10);
 
-        
-        Console.WriteLine("Volume of cube1 is {0}", cube1.getVolume());
-        Console.WriteLine("Volume of cube2 is {0}", cube2.getVolume());
-        */
+        //Console.WriteLine("Volume of cube1 is {0}",cube1.getVolume());
+        //Console.WriteLine("Volume of cube2 is {0}", cube2.getVolume());
 
-        Person p1 = new Person("Rick", "Phillips", "Male", 67, 210, 72);
-        Person p2 = new Person(weight: 150, height: 75, age: 39, firstname: "David", lastname: "Phillips", gender: "Male");
+        Person p1 = new Person("Rick", "Phillips", "Male", 68, 210, 72);
+        Person p2 = new Person(weight: 150, height: 75, age: 39, firstname: "David", lastname: "Phillips", gender:"Male");
 
-        if (p1.failsBMI())
-            Console.WriteLine("{0} loose some weight", p1.getFirstName());
-        else
-            Console.WriteLine("{0} the gym is really starting to pay off", p1.getFirstName());
 
-        if (p2.failsBMI())
-            Console.WriteLine("{0} loose some weight", p2.getFirstName());
-        else
-            Console.WriteLine("{0} the gym is really starting to pay off", p2.getFirstName());
+        if (p1.failsBMI()) Console.WriteLine("{0} loose some weight", p1.getFirstName());
+        else Console.WriteLine("{0} the gym is really starting to pay off", p1.getFirstName());
 
-        p1 = p2;    // classes are passed by reference so now p1 points at p2 memory
+        if (p2.failsBMI()) Console.WriteLine("{0} loose some weight", p2.getFirstName());
+        else Console.WriteLine("{0} the gym is really starting to pay off", p2.getFirstName());
 
-        if (p1.failsBMI())
-            Console.WriteLine("{0} loose some weight", p1.getFirstName());
-        else
-            Console.WriteLine("{0} the gym is really starting to pay off", p1.getFirstName());
+        p1 = p2;
 
-        if (p2.failsBMI())
-            Console.WriteLine("{0} loose some weight", p2.getFirstName());
-        else
-            Console.WriteLine("{0} the gym is really starting to pay off", p2.getFirstName());
+        if (p1.failsBMI()) Console.WriteLine("{0} loose some weight", p1.getFirstName());
+        else Console.WriteLine("{0} the gym is really starting to pay off", p1.getFirstName());
+
+        if (p2.failsBMI()) Console.WriteLine("{0} loose some weight", p2.getFirstName());
+        else Console.WriteLine("{0} the gym is really starting to pay off", p2.getFirstName());
     }
 }
