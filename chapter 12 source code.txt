@@ -1,0 +1,236 @@
+namespace chapter_12_matching_game
+{
+    public partial class UserProfile : Form
+    {
+        public UserProfile()
+        {
+            InitializeComponent();
+        }
+
+        private void UserProfile_Load(object sender, EventArgs e)
+        {
+            UserErrorMessage.Visible = false;
+            SalutationComboBox.SelectedItem = 0; // blank is default
+            FirstNameTextBox.Text = null;
+            LastNameTextBox.Text = null;
+            PrevMinTimeTextBox.Text = "0";
+        }
+
+        private bool valid_data()
+        {
+            if (FirstNameTextBox.Text.Length > 0 && LastNameTextBox.Text.Length > 0) return true;
+            else
+            {
+                UserErrorMessage.Visible = true;
+                return false;
+            }
+        }
+
+        private void SubmitButton_Click(object sender, EventArgs e)
+        {
+            if (valid_data())
+            {
+                UserErrorMessage.Visible = false;
+
+                this.Hide();
+
+                // instantiate a new MatchingGame form and display simultaneously with UserProfile
+                MatchingGame mg = new MatchingGame(FirstNameTextBox.Text,LastNameTextBox.Text,Convert.ToInt32(PrevMinTimeTextBox.Text));
+                mg.ShowDialog();
+
+            }
+            else return;
+        }
+    }
+}
+
+
+using Chapter_12_Matching_Game;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace chapter_12_matching_game
+{
+    public partial class MatchingGame : Form
+    {
+        int user_prev_high_score;
+        Label first, second;
+
+        // create an nstance of thr Random class
+        Random r = new Random();
+
+        // create a list of string pairs from lower case a through h
+        List<string> myIcons = new List<string>()
+            { "a","a","b","b","c","c","d","d","e","e","f","f","g","g","h","h"};
+        private void AssignIcons()
+        {
+            foreach (Control c in tableLayoutPanel1.Controls)
+            {
+                // instantiate each Control as Label class
+                Label l = c as Label;
+
+                // create an integer variable ran and assign it to the next available
+                // random number smaller than the number of items in our string list
+                // note, the myIcons.Count value will decrement with each loop cycle
+                int ran = r.Next(myIcons.Count);
+
+                // assign ran Webding to Text property of Label l
+                l.Text = myIcons[ran];
+
+                // remove the current value from myIcons
+                myIcons.RemoveAt(ran);
+            }
+        }
+
+        private void MatchingGame_Load(object sender, EventArgs e)
+        {
+            AssignIcons();
+            progressBar1.Value = 0;
+            TimerLabel.Text = "0";
+            first = null;
+            second = null;
+            timer1.Tick += Timer1_Tick;
+            timer2.Interval = 1000;
+            timer2.Tick += timer2_Tick;
+
+            foreach (Control c in tableLayoutPanel1.Controls)
+            {
+                Label l = c as Label;
+                l.ForeColor = l.BackColor;
+                l.Click += label_click; // assign label_click to each label
+            }
+
+            // start the 90 second game timer
+            timer1.Start();
+        }
+
+        private void Timer2_Tick(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Timer1_Tick(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void label_click(object sender, EventArgs e)
+        {
+            Label l = sender as Label;
+
+            if (timer2.Enabled == true || l.ForeColor == Color.Black)
+                // just ignore the user clicked while it was visible
+                return;
+
+            if (first == null)
+            {
+                first = l;
+                l.ForeColor = Color.Black;
+                return;
+            }
+
+            // if the flow made it here we are on second pick
+            second = l;
+            l.ForeColor = Color.Black;
+
+            // check for win
+            if (first.Text == second.Text)
+            {
+                // leave the images visible
+                first.ForeColor = Color.Black;
+                second.ForeColor = Color.Black;
+                first = null;
+                second = null;
+                CheckForWin();
+            }
+            else
+            {
+                // start timer 2
+                timer2.Start();
+            }
+        }
+
+        private void CheckForWin()
+        {
+            foreach (Control c in tableLayoutPanel1.Controls)
+                if (c.ForeColor == Color.Black) return;
+
+            // the user has won
+            timer1.Stop();
+            timer2.Stop();
+
+            // open ResultsPage
+            this.Hide();
+            ResultsPage rp = new ResultsPage(progressBar1.Value, UserName.Text);
+            rp.ShowDialog();
+        }
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+            timer2.Stop();
+            first.ForeColor= first.BackColor;
+            second.ForeColor= second.BackColor;
+            first = null;
+            second = null;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            progressBar1.Value += 1;
+            TimerLabel.Text = (1+progressBar1.Value).ToString();
+
+            if (progressBar1.Value == 90)
+            {
+                timer1.Stop();
+                timer2.Stop();
+                MessageBox.Show("Sorry, time has expired");
+            }
+        }
+
+        public MatchingGame(string first_name, string last_name, int prev_high)
+        {
+            InitializeComponent();
+            UserName.Text = first_name + " " + last_name;
+            user_prev_high_score = prev_high;
+        }
+    }
+}
+
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Chapter_12_Matching_Game
+{
+    public partial class ResultsPage : Form
+    {
+        int myScore;
+        string myUsername;
+
+        public ResultsPage(int myScore, string myUsername)
+        {
+            InitializeComponent();
+            this.myScore = myScore;
+            this.myUsername = myUsername;
+        }
+
+        private void ResultsPage_Load(object sender, EventArgs e)
+        {
+            UserName.Text = "Congratulations " + myUsername + " " + myScore + " is a champion's score.";
+        }
+    }
+}
